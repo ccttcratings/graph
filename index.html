@@ -117,9 +117,13 @@ function parseCSV(text) {
   for (var p in series) {
     series[p].sort(function(a, b) { return a[0].getTime() - b[0].getTime(); });
   }
+  var lastRating = {};
+  for (var p in series) {
+    var pts = series[p];
+    lastRating[p] = pts[pts.length - 1][1];
+  }
   var roster = Object.keys(series).sort(function(a, b) {
-    var la = playerDates[a], lb = playerDates[b];
-    return lb.getTime() - la.getTime();
+    return lastRating[b] - lastRating[a];
   });
   return { roster: roster, series: series, lastDates: playerDates };
 }
@@ -394,11 +398,16 @@ function init() {
       state.roster = data.roster;
       state.series = data.series;
       state.colors = {};
-      data.roster.forEach(function(name, i) { state.colors[name] = graphColor(i); });
+      var sorted = data.roster.slice().sort();
+      sorted.forEach(function(name, i) { state.colors[name] = graphColor(i); });
       if (!hadChoice) {
         state.hidden = {};
         data.roster.forEach(function(name) {
-          if (!isPlayerActive(name)) state.hidden[name] = true;
+          var dates = data.series[name];
+          if (!dates || dates.length === 0) { state.hidden[name] = true; return; }
+          var lastMs = dates[dates.length - 1][0].getTime();
+          var days = Math.floor((Date.now() - lastMs) / 86400000);
+          if (days >= HIDE_DAY) state.hidden[name] = true;
         });
         saveHidden();
       }
