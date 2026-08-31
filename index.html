@@ -396,22 +396,32 @@ function init() {
     .then(function(r) { return r.text(); })
     .then(function(csv) {
       var data = parseCSV(csv);
-      state.roster = data.roster;
-      state.series = data.series;
+      var activeRoster = [];
+      var activeSeries = {};
+      var now = Date.now();
+      data.roster.forEach(function(name) {
+        var dates = data.series[name];
+        if (!dates || dates.length === 0) return;
+        var lastMs = dates[dates.length - 1][0].getTime();
+        var days = Math.floor((now - lastMs) / 86400000);
+        if (days < HIDE_DAY) {
+          activeRoster.push(name);
+          activeSeries[name] = dates;
+        }
+      });
+      state.roster = activeRoster;
+      state.series = activeSeries;
       state.colors = {};
-      var sorted = data.roster.slice().sort();
+      var sorted = activeRoster.slice().sort();
       sorted.forEach(function(name, i) { state.colors[name] = graphColor(i); });
-      if (!hadChoice) {
-        state.hidden = {};
-        data.roster.forEach(function(name) {
-          var dates = data.series[name];
-          if (!dates || dates.length === 0) { state.hidden[name] = true; return; }
-          var lastMs = dates[dates.length - 1][0].getTime();
-          var days = Math.floor((Date.now() - lastMs) / 86400000);
-          if (days >= HIDE_DAY) state.hidden[name] = true;
-        });
-        saveHidden();
-      }
+      state.hidden = {};
+      activeRoster.forEach(function(name) {
+        var dates = activeSeries[name];
+        var lastMs = dates[dates.length - 1][0].getTime();
+        var days = Math.floor((now - lastMs) / 86400000);
+        if (days >= FADE_START) state.hidden[name] = true;
+      });
+      saveHidden();
       document.getElementById('loading').style.display = 'none';
       buildSidebar();
       buildChart();
