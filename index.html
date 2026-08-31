@@ -39,6 +39,9 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
 #zoomHint{position:absolute;bottom:32px;right:16px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+#zoomBtns{position:absolute;bottom:36px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:5}
+#zoomBtns button{width:40px;height:40px;border:1px solid #aaa;border-radius:6px;background:rgba(255,255,255,0.85);font-size:22px;font-weight:bold;color:#333;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;line-height:1}
+#zoomBtns button:active{background:#ddd}
 </style>
 </head>
 <body>
@@ -65,6 +68,10 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
       <div id="chartBox">
         <canvas id="chart"></canvas>
         <div id="zoomHint">Scroll to zoom · Drag to pan · Tap a line</div>
+        <div id="zoomBtns">
+          <button id="zoomInBtn" onclick="zoomIn()">+</button>
+          <button id="zoomOutBtn" onclick="zoomOut()">&minus;</button>
+        </div>
       </div>
       <div id="scrollbar">
         <div id="scrollTrack">
@@ -90,6 +97,37 @@ var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
 var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false };
 var pinchState = { active: false, lastDist: 0, startMin: 0, startMax: 0 };
 var thumbDrag = { active: false, startX: 0, startMin: 0, startMax: 0 };
+
+function isTouchInChart(evt) {
+  var wrap = document.getElementById('chartWrap');
+  if (!wrap) return false;
+  var rect = wrap.getBoundingClientRect();
+  for (var i = 0; i < evt.touches.length; i++) {
+    var t = evt.touches[i];
+    if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) return true;
+  }
+  return false;
+}
+
+function zoomIn() {
+  var span = view.max - view.min;
+  var center = (view.min + view.max) / 2;
+  var newSpan = Math.max(MIN_SPAN, span * 0.6);
+  view.min = center - newSpan / 2;
+  view.max = center + newSpan / 2;
+  clampView();
+  applyView();
+}
+
+function zoomOut() {
+  var span = view.max - view.min;
+  var center = (view.min + view.max) / 2;
+  var newSpan = Math.min(view.dataMax - view.dataMin, span * 1.67);
+  view.min = center - newSpan / 2;
+  view.max = center + newSpan / 2;
+  clampView();
+  applyView();
+}
 
 function distToSegmentSq(px, py, ax, ay, bx, by) {
   var dx = bx - ax, dy = by - ay;
@@ -154,20 +192,17 @@ function clampView() {
 function followTooltip() {
   var chart = state.chart;
   if (!chart || !state.active) return;
-  var ds = chart.data.datasets[state.active.di];
-  if (!ds || ds.hidden) { state.active = null; return; }
-  var pt = ds.data[state.active.idx];
-  if (!pt) { state.active = null; return; }
-  var xPx = chart.scales.x.getPixelForValue(pt.x);
-  var yPx = chart.scales.y.getPixelForValue(pt.y);
+  var meta = chart.getDatasetMeta(state.active.di);
+  if (!meta || !meta.data[state.active.idx]) return;
+  var el = meta.data[state.active.idx];
   var area = chart.chartArea;
-  var offscreen = xPx < area.left || xPx > area.right || yPx < area.top || yPx > area.bottom;
+  var offscreen = el.x < area.left - 20 || el.x > area.right + 20 || el.y < area.top - 20 || el.y > area.bottom + 20;
   if (offscreen) {
     chart.tooltip.setActiveElements([]);
     state.active = null;
     return;
   }
-  chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: xPx, y: yPx });
+  chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
 }
 
 function applyView() {
@@ -176,8 +211,9 @@ function applyView() {
   chart.options.scales.x.min = view.min;
   chart.options.scales.x.max = view.max;
   cropAxis();
-  followTooltip();
   chart.update('none');
+  followTooltip();
+  if (state.active) chart.update('none');
   updateScrollThumb();
 }
 
@@ -753,6 +789,19 @@ function init() {
       canvas.addEventListener('touchstart', canvasTouchStart, { passive: false });
       canvas.addEventListener('touchmove', canvasTouchMove, { passive: false });
       canvas.addEventListener('touchend', canvasTouchEnd);
+
+      document.addEventListener('touchstart', function(evt) {
+        if (evt.touches.length >= 2 && isTouchInChart(evt)) {
+          evt.preventDefault();
+          evt.stopImmediatePropagation();
+        }
+      }, true);
+      document.addEventListener('touchmove', function(evt) {
+        if (evt.touches.length >= 2 && isTouchInChart(evt)) {
+          evt.preventDefault();
+          evt.stopImmediatePropagation();
+        }
+      }, true);
     })
     .catch(function(err) {
       document.getElementById('loading').style.display = 'none';
