@@ -12,12 +12,9 @@
 html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
 #app{display:flex;flex-direction:column;height:100vh;touch-action:none}
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
-#sidebar{width:180px;min-width:180px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;transition:margin-left .25s ease,opacity .25s ease;position:relative}
+#sidebar{width:180px;min-width:180px;background:#fff;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative;box-shadow:inset -3px 0 0 #ffa5a5,inset -6px 0 0 #ffa5a5}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
-#collapseHandle{width:18px;cursor:ew-resize;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#fff;border-left:3px double #ffa5a5;border-right:3px double #ffa5a5;transition:background .15s;flex-shrink:0;touch-action:none;user-select:none}
-#collapseHandle:hover{background:#fdf1e5}
-#collapseHandle .ch-arrow{color:#c5eec5;font-size:12px;line-height:1}
-#collapseHandle .ch-label{writing-mode:vertical-rl;text-orientation:mixed;font-size:11px;font-weight:bold;color:#c5eec5;letter-spacing:1px}
+#collapseHandle{width:14px;cursor:ew-resize;flex-shrink:0;touch-action:none;user-select:none}
 #sidebarTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:24px;height:60px;background:#fdf1e5;border:1px solid #e1e4e8;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;z-index:10;align-items:center;justify-content:center;font-size:13px;color:#6a737d;touch-action:manipulation;transition:background .15s}
 #sidebarTab:hover{background:#f0e0c8}
 #sidebarTab.show{display:flex}
@@ -70,7 +67,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
       </div>
       <div id="names"></div>
     </div>
-    <div id="collapseHandle" onclick="collapseSidebar()"><span class="ch-arrow">&#9650;</span><span class="ch-label">Rating</span><span class="ch-arrow">&#9660;</span></div>
+    <div id="collapseHandle" onclick="collapseSidebar()"></div>
     <div id="sidebarTab" onclick="expandSidebar()">&#9654;</div>
     <div id="chartWrap">
       <div id="chartBox">
@@ -641,6 +638,27 @@ var customXAxis = {
   }
 };
 
+var ratingArrows = {
+  id: 'ratingArrows',
+  afterDraw: function(chart) {
+    var ctx = chart.ctx;
+    var yScale = chart.scales.y;
+    var area = chart.chartArea;
+    if (!yScale || !area) return;
+    var x = area.left - 6;
+    var yTitleTop = yScale.top + 10;
+    var yTitleBot = yScale.bottom - 10;
+    ctx.save();
+    ctx.fillStyle = '#c5eec5';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\u25C0', x, yTitleTop);
+    ctx.fillText('\u25C0', x, yTitleBot);
+    ctx.restore();
+  }
+};
+
 function buildChart() {
   var datasets = [];
   state.roster.forEach(function(name, i) {
@@ -714,7 +732,7 @@ function buildChart() {
         }
       }
     },
-    plugins: [customXAxis]
+    plugins: [customXAxis, ratingArrows]
   });
   cropAxis();
 }
@@ -842,18 +860,17 @@ function initSidebarSwipe() {
     sidebarDrag.captured = false;
     sidebarDrag.startX = evt.clientX;
     sidebarDrag.ptrId = evt.pointerId;
-  });
+  }, true);
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active || evt.pointerId !== sidebarDrag.ptrId) return;
-    if (!sidebarDrag.captured && Math.abs(evt.clientX - sidebarDrag.startX) > 8) {
+    var dx = evt.clientX - sidebarDrag.startX;
+    if (!sidebarDrag.captured && dx < -10) {
       sidebarDrag.captured = true;
     }
-    if (sidebarDrag.captured) {
-      var dx = evt.clientX - sidebarDrag.startX;
-      if (dx < -60) {
-        sidebarDrag.active = false;
-        collapseSidebar();
-      }
+    if (sidebarDrag.captured && dx < -40) {
+      sidebarDrag.active = false;
+      sidebarDrag.captured = false;
+      collapseSidebar();
     }
   });
   document.addEventListener('pointerup', function(evt) {
