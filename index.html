@@ -192,7 +192,7 @@ function buildSidebar() {
     var pname = document.createElement('div');
     pname.className = 'pname';
     pname.textContent = name;
-    if (fade && !hidden) pname.style.color = fade;
+    if (fade) pname.style.color = fade;
     row.appendChild(swatch);
     row.appendChild(pname);
     row.addEventListener('click', function() {
