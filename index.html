@@ -12,7 +12,7 @@
 html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
 #app{display:flex;flex-direction:column;height:100vh;touch-action:none}
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
-#sidebar{width:180px;min-width:180px;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative}
+#sidebar{width:180px;min-width:180px;background:#f7f8fa;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
 #collapseHandle{width:6px;cursor:ew-resize;flex-shrink:0;touch-action:none;user-select:none;display:flex;gap:2px;background:#fce5cd;padding:0 0 0 0}
 #collapseHandle .red{flex:1;background:#ffa5a5}
@@ -645,16 +645,13 @@ var ratingArrows = {
   afterDraw: function(chart) {
     var ctx = chart.ctx;
     var area = chart.chartArea;
-    if (!area) return;
-    var x = area.left;
+    var yScale = chart.scales.y;
+    if (!area || !yScale) return;
+    var x = yScale.left - 8;
     var top = area.top;
     var bot = area.bottom;
     var step = (bot - top) / 4;
     ctx.save();
-    ctx.fillStyle = '#c5eec5';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
     for (var i = 0; i < 5; i++) {
       var y = top + i * step;
       if (i === 2) {
@@ -663,10 +660,15 @@ var ratingArrows = {
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#000';
         ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('Rating', 0, 0);
         ctx.restore();
       } else {
         ctx.fillStyle = '#c5eec5';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('\u25C0', x, y);
       }
     }
