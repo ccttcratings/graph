@@ -402,8 +402,8 @@ function init() {
       state.roster = activeRoster;
       state.series = activeSeries;
       state.colors = {};
-      var sorted = activeRoster.slice().sort();
-      sorted.forEach(function(name, i) { state.colors[name] = graphColor(i); });
+      state.roster.forEach(function(name, i) { state.colors[name] = graphColor(i); });
+      state.colors['Kevin Krandall'] = 'hsl(140,72%,30%)';
       state.hidden = {};
       activeRoster.forEach(function(name) {
         var dates = activeSeries[name];
