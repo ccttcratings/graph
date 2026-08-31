@@ -9,18 +9,18 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
-#app{display:flex;flex-direction:column;height:100vh}
-#body{display:flex;flex:1;overflow:hidden}
-#sidebar{width:240px;min-width:240px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden}
-#sidebarHeader{padding:12px 6px 8px;border-bottom:1px solid #e1e4e8;background:#fdf1e5}
+html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
+#app{display:flex;flex-direction:column;height:100vh;touch-action:none}
+#body{display:flex;flex:1;overflow:hidden;touch-action:none}
+#sidebar{width:240px;min-width:240px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y}
+#sidebarHeader{padding:12px 6px 8px;border-bottom:1px solid #e1e4e8;background:#fdf1e5;touch-action:pan-y}
 #logo{display:block;width:100%;max-height:140px;object-fit:contain;margin:0 0 12px;border-radius:6px}
 .toolbar{display:flex;gap:4px;margin-bottom:6px}
 .toolbar img{width:100%;height:auto;cursor:pointer;display:block;transition:filter .2s}
 .toolbar img:hover{filter:brightness(.92) saturate(1.5)}
 .toolbar img.touch-active{filter:brightness(.88) saturate(1.8)}
 #count{font-size:12px;color:#6a737d;margin-bottom:4px}
-#names{flex:1;overflow-y:auto;padding:4px 0}
+#names{flex:1;overflow-y:auto;padding:4px 0;touch-action:pan-y}
 .player-row{display:flex;align-items:center;padding:4px 14px;cursor:pointer;transition:background .15s;gap:8px}
 .player-row.active{background:#fce5cd}
 .player-row.off{background:#fdf1e5;opacity:.38}
@@ -154,12 +154,20 @@ function clampView() {
 function followTooltip() {
   var chart = state.chart;
   if (!chart || !state.active) return;
-  var meta = chart.getDatasetMeta(state.active.di);
-  if (!meta || !meta.data[state.active.idx]) return;
-  var el = meta.data[state.active.idx];
-  if (el.skip) { chart.tooltip.setActiveElements([]); chart.update(); return; }
-  chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
-  chart.update('none');
+  var ds = chart.data.datasets[state.active.di];
+  if (!ds || ds.hidden) { state.active = null; return; }
+  var pt = ds.data[state.active.idx];
+  if (!pt) { state.active = null; return; }
+  var xPx = chart.scales.x.getPixelForValue(pt.x);
+  var yPx = chart.scales.y.getPixelForValue(pt.y);
+  var area = chart.chartArea;
+  var offscreen = xPx < area.left || xPx > area.right || yPx < area.top || yPx > area.bottom;
+  if (offscreen) {
+    chart.tooltip.setActiveElements([]);
+    state.active = null;
+    return;
+  }
+  chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: xPx, y: yPx });
 }
 
 function applyView() {
@@ -167,10 +175,10 @@ function applyView() {
   if (!chart) return;
   chart.options.scales.x.min = view.min;
   chart.options.scales.x.max = view.max;
-  chart.update('none');
   cropAxis();
-  updateScrollThumb();
   followTooltip();
+  chart.update('none');
+  updateScrollThumb();
 }
 
 function updateScrollThumb() {
@@ -524,7 +532,6 @@ function cropAxis() {
   max = Math.ceil((max + pad) / 10) * 10;
   chart.options.scales.y.min = min;
   chart.options.scales.y.max = max;
-  chart.update('none');
 }
 
 var customXAxis = {
@@ -743,11 +750,9 @@ function init() {
       canvas.addEventListener('mouseup', canvasMouseUp);
       canvas.addEventListener('mouseleave', function() { panState.active = false; panState.didDrag = false; });
       canvas.addEventListener('wheel', canvasWheel, { passive: false });
-
-      var chartBox = document.getElementById('chartBox');
-      chartBox.addEventListener('touchstart', canvasTouchStart, { passive: false });
-      chartBox.addEventListener('touchmove', canvasTouchMove, { passive: false });
-      chartBox.addEventListener('touchend', canvasTouchEnd);
+      canvas.addEventListener('touchstart', canvasTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', canvasTouchMove, { passive: false });
+      canvas.addEventListener('touchend', canvasTouchEnd);
     })
     .catch(function(err) {
       document.getElementById('loading').style.display = 'none';
