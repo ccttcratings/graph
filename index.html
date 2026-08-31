@@ -376,13 +376,12 @@ function buildChart() {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { bottom: 40 } },
-      events: ['mousemove'],
+      events: [],
       animation: false,
       plugins: {
         legend: { display: false },
         tooltip: {
           enabled: true,
-          intersect: false,
           callbacks: {
             title: function(items) { return items[0].dataset.label; },
             label: function(item) {
