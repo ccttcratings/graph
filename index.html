@@ -12,18 +12,20 @@
 html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
 #app{display:flex;flex-direction:column;height:100vh;touch-action:none}
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
-#sidebar{width:180px;min-width:180px;background:#fff;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative;box-shadow:inset -3px 0 0 #ffa5a5,inset -6px 0 0 #ffa5a5}
+#sidebar{width:180px;min-width:180px;background:#f7f8fa;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
 #collapseHandle{width:14px;cursor:ew-resize;flex-shrink:0;touch-action:none;user-select:none}
 #sidebarTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:24px;height:60px;background:#fdf1e5;border:1px solid #e1e4e8;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;z-index:10;align-items:center;justify-content:center;font-size:13px;color:#6a737d;touch-action:manipulation;transition:background .15s}
 #sidebarTab:hover{background:#f0e0c8}
 #sidebarTab.show{display:flex}
-#sidebarHeader{padding:3px 2px 2px;border-bottom:1px solid #e1e4e8;background:#fdf1e5;touch-action:pan-y}
+#sidebarHeader{padding:3px 2px 2px;border-bottom:1px solid #d1d5da;background:#fdf1e5;touch-action:pan-y}
 #logo{display:block;width:100%;max-height:80px;object-fit:contain;margin:0 0 2px;border-radius:6px}
-.toolbar{display:flex;gap:2px;margin-bottom:2px;width:100%}
+.toolbar{display:flex;gap:2px;margin-bottom:2px;width:100%;align-items:stretch}
 .toolbar img{flex:1;min-width:0;height:auto;cursor:pointer;display:block;transition:filter .2s}
 .toolbar img:hover{filter:brightness(.92) saturate(1.5)}
 .toolbar img.touch-active{filter:brightness(.88) saturate(1.8)}
+.red-lines{display:flex;gap:2px;padding-right:2px;align-self:center}
+.red-line{width:1.5px;background:#ffa5a5;flex-shrink:0}
 #count{font-size:8px;color:#6a737d;margin-bottom:0;margin-top:0}
 #names{flex:1;overflow-y:auto;padding:4px 0;touch-action:pan-y}
 .player-row{display:flex;align-items:center;padding:4px 14px;cursor:pointer;transition:background .15s;gap:8px}
@@ -35,11 +37,11 @@ html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-syste
 #chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative;touch-action:none}
 #chartBox{position:relative;width:100%;flex:1;padding:2px;overflow:hidden;touch-action:none}
 canvas{width:100%!important;height:100%!important;touch-action:none}
-#scrollbar{position:relative;height:24px;background:#e1e4e8;border-top:1px solid #d1d5da;flex-shrink:0;cursor:pointer}
-#scrollTrack{position:absolute;top:4px;left:8px;right:8px;height:16px;background:#d1d5da;border-radius:8px}
-#scrollThumb{position:absolute;top:0;height:16px;background:#6a737d;border-radius:8px;cursor:grab;min-width:24px;transition:none}
+#scrollbar{position:relative;height:24px;background:#d1d5da;border-top:1px solid #c0c4c8;flex-shrink:0;cursor:pointer}
+#scrollTrack{position:absolute;top:4px;left:8px;right:8px;height:16px;background:#bfc3c7;border-radius:8px}
+#scrollThumb{position:absolute;top:0;height:16px;background:#555;border-radius:8px;cursor:grab;min-width:24px;transition:none}
 #scrollThumb:active{cursor:grabbing;background:#555}
-#loading{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);z-index:10;font-size:16px;color:#6a737d}
+#loading{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(247,248,250,.85);z-index:10;font-size:16px;color:#6a737d}
 #loading .spinner{width:24px;height:24px;border:3px solid #e1e4e8;border-top-color:#0366d6;border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
@@ -58,6 +60,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
         <div class="toolbar">
           <img src="buttons/select-all-green.png" onclick="document.getElementById('showAll').click()" alt="Select All">
           <img src="buttons/hide-inactive-purple.png" onclick="document.getElementById('hideInactive').click()" alt="Hide Inactive">
+          <div class="red-lines"><div class="red-line"></div><div class="red-line"></div></div>
           <img src="buttons/clear-red.png" onclick="document.getElementById('hideAll').click()" alt="Clear">
         </div>
         <button id="showAll" style="display:none"></button>
@@ -645,16 +648,18 @@ var ratingArrows = {
     var yScale = chart.scales.y;
     var area = chart.chartArea;
     if (!yScale || !area) return;
-    var x = area.left - 6;
-    var yTitleTop = yScale.top + 10;
-    var yTitleBot = yScale.bottom - 10;
+    var centerY = (area.top + area.bottom) / 2;
+    var titleLeft = area.left - 6;
+    var arrowSpacing = 40;
     ctx.save();
     ctx.fillStyle = '#c5eec5';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('\u25C0', x, yTitleTop);
-    ctx.fillText('\u25C0', x, yTitleBot);
+    ctx.fillText('\u25C0', titleLeft, centerY - arrowSpacing * 1.5);
+    ctx.fillText('\u25C0', titleLeft, centerY - arrowSpacing * 0.5);
+    ctx.fillText('\u25C0', titleLeft, centerY + arrowSpacing * 0.5);
+    ctx.fillText('\u25C0', titleLeft, centerY + arrowSpacing * 1.5);
     ctx.restore();
   }
 };
@@ -851,41 +856,25 @@ document.querySelectorAll('.toolbar img').forEach(function(img) {
   });
 });
 
-var sidebarDrag = { active: false, startX: 0, captured: false, ptrId: null };
+var sidebarDrag = { active: false, startX: 0 };
 
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   sidebar.addEventListener('pointerdown', function(evt) {
+    if (evt.pointerType !== 'touch') return;
     sidebarDrag.active = true;
-    sidebarDrag.captured = false;
     sidebarDrag.startX = evt.clientX;
-    sidebarDrag.ptrId = evt.pointerId;
-  }, true);
+  });
   document.addEventListener('pointermove', function(evt) {
-    if (!sidebarDrag.active || evt.pointerId !== sidebarDrag.ptrId) return;
+    if (!sidebarDrag.active || evt.pointerType !== 'touch') return;
     var dx = evt.clientX - sidebarDrag.startX;
-    if (!sidebarDrag.captured && dx < -10) {
-      sidebarDrag.captured = true;
-    }
-    if (sidebarDrag.captured && dx < -40) {
+    if (dx < -60) {
       sidebarDrag.active = false;
-      sidebarDrag.captured = false;
       collapseSidebar();
     }
   });
   document.addEventListener('pointerup', function(evt) {
-    if (evt.pointerId === sidebarDrag.ptrId) {
-      sidebarDrag.active = false;
-      sidebarDrag.captured = false;
-      sidebarDrag.ptrId = null;
-    }
-  });
-  document.addEventListener('pointercancel', function(evt) {
-    if (evt.pointerId === sidebarDrag.ptrId) {
-      sidebarDrag.active = false;
-      sidebarDrag.captured = false;
-      sidebarDrag.ptrId = null;
-    }
+    if (evt.pointerType === 'touch') sidebarDrag.active = false;
   });
 }
 
