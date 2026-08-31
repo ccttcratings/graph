@@ -268,6 +268,8 @@ function pointerDown(evt) {
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     pinchState.startDist = Math.sqrt(dx * dx + dy * dy);
+    state.active = null;
+    if (state.chart) state.chart.tooltip.setActiveElements([]);
   } else if (count === 1) {
     panState.active = true;
     panState.startX = evt.clientX;
@@ -288,7 +290,7 @@ function pointerMove(evt) {
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     var dist = Math.sqrt(dx * dx + dy * dy);
     if (pinchState.startDist > 0) {
-      var scale = pinchState.startDist / dist;
+      var scale = Math.pow(pinchState.startDist / dist, 1.5);
       var span = (pinchState.startMax - pinchState.startMin) * scale;
       span = Math.max(MIN_SPAN, Math.min(view.dataMax - view.dataMin, span));
       var center = (pinchState.startMin + pinchState.startMax) / 2;
