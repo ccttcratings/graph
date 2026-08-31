@@ -98,17 +98,6 @@ var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: fa
 var pinchState = { active: false, lastDist: 0, startMin: 0, startMax: 0 };
 var thumbDrag = { active: false, startX: 0, startMin: 0, startMax: 0 };
 
-function isTouchInChart(evt) {
-  var wrap = document.getElementById('chartWrap');
-  if (!wrap) return false;
-  var rect = wrap.getBoundingClientRect();
-  for (var i = 0; i < evt.touches.length; i++) {
-    var t = evt.touches[i];
-    if (t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom) return true;
-  }
-  return false;
-}
-
 function zoomIn() {
   var span = view.max - view.min;
   var center = (view.min + view.max) / 2;
@@ -205,15 +194,14 @@ function followTooltip() {
   chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
 }
 
-function applyView() {
+function applyView(skipCrop) {
   var chart = state.chart;
   if (!chart) return;
   chart.options.scales.x.min = view.min;
   chart.options.scales.x.max = view.max;
-  cropAxis();
+  if (!skipCrop) cropAxis();
   chart.update('none');
-  followTooltip();
-  if (state.active) chart.update('none');
+  if (!skipCrop) { followTooltip(); if (state.active) chart.update('none'); }
   updateScrollThumb();
 }
 
@@ -263,31 +251,39 @@ function canvasMouseUp(evt) {
   if (!wasDrag) onCanvasClick(evt);
 }
 
-function canvasTouchStart(evt) {
+var pointerState = {};
+
+function pointerDown(evt) {
   evt.preventDefault();
-  if (evt.touches.length === 2) {
-    evt.preventDefault();
+  state.chart.canvas.setPointerCapture(evt.pointerId);
+  pointerState[evt.pointerId] = { x: evt.clientX, y: evt.clientY };
+  var count = Object.keys(pointerState).length;
+  if (count === 2) {
     panState.active = false;
     pinchState.active = true;
     pinchState.startMin = view.min;
     pinchState.startMax = view.max;
-    var dx = evt.touches[0].clientX - evt.touches[1].clientX;
-    var dy = evt.touches[0].clientY - evt.touches[1].clientY;
+    var ids = Object.keys(pointerState);
+    var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
+    var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     pinchState.lastDist = Math.sqrt(dx * dx + dy * dy);
-  } else if (evt.touches.length === 1) {
+  } else if (count === 1) {
     panState.active = true;
-    panState.startX = evt.touches[0].clientX;
+    panState.startX = evt.clientX;
     panState.startMin = view.min;
     panState.startMax = view.max;
     panState.didDrag = false;
   }
 }
 
-function canvasTouchMove(evt) {
-  if (evt.touches.length === 2 && pinchState.active) {
-    evt.preventDefault();
-    var dx = evt.touches[0].clientX - evt.touches[1].clientX;
-    var dy = evt.touches[0].clientY - evt.touches[1].clientY;
+function pointerMove(evt) {
+  if (!pointerState[evt.pointerId]) return;
+  pointerState[evt.pointerId] = { x: evt.clientX, y: evt.clientY };
+  var count = Object.keys(pointerState).length;
+  if (count === 2 && pinchState.active) {
+    var ids = Object.keys(pointerState);
+    var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
+    var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     var dist = Math.sqrt(dx * dx + dy * dy);
     if (pinchState.lastDist > 0) {
       var scale = pinchState.lastDist / dist;
@@ -297,11 +293,11 @@ function canvasTouchMove(evt) {
       view.min = center - span / 2;
       view.max = center + span / 2;
       clampView();
-      applyView();
+      applyView(true);
     }
     pinchState.lastDist = dist;
-  } else if (evt.touches.length === 1 && panState.active && !pinchState.active) {
-    var dx2 = evt.touches[0].clientX - panState.startX;
+  } else if (count === 1 && panState.active && !pinchState.active) {
+    var dx2 = evt.clientX - panState.startX;
     if (Math.abs(dx2) > DRAG_TOL) panState.didDrag = true;
     if (!panState.didDrag) return;
     var chart = state.chart;
@@ -316,19 +312,34 @@ function canvasTouchMove(evt) {
   }
 }
 
-function canvasTouchEnd(evt) {
-  if (evt.touches.length < 2) {
+function pointerUp(evt) {
+  var wasPinch = pinchState.active;
+  delete pointerState[evt.pointerId];
+  var count = Object.keys(pointerState).length;
+  if (count < 2) {
     pinchState.active = false;
     pinchState.lastDist = 0;
+    if (wasPinch) applyView();
   }
-  if (evt.touches.length === 0) {
+  if (count === 0) {
     var wasDrag = panState.didDrag;
     panState.active = false;
     panState.didDrag = false;
-    if (!wasDrag && evt.changedTouches && evt.changedTouches.length === 1) {
-      var t = evt.changedTouches[0];
-      onCanvasClick({ clientX: t.clientX, clientY: t.clientY });
-    }
+    if (!wasDrag) onCanvasClick(evt);
+  }
+}
+
+function pointerCancel(evt) {
+  var wasPinch = pinchState.active;
+  delete pointerState[evt.pointerId];
+  var count = Object.keys(pointerState).length;
+  if (count < 2) {
+    pinchState.active = false;
+    pinchState.lastDist = 0;
+  }
+  if (count === 0) {
+    panState.active = false;
+    panState.didDrag = false;
   }
 }
 
@@ -782,28 +793,16 @@ function init() {
       applyView();
       initScrollbar();
 
-      var canvas = state.chart.canvas;
       canvas.addEventListener('mousedown', canvasMouseDown);
       canvas.addEventListener('mousemove', canvasMouseMove);
       canvas.addEventListener('mouseup', canvasMouseUp);
       canvas.addEventListener('mouseleave', function() { panState.active = false; panState.didDrag = false; });
       canvas.addEventListener('wheel', canvasWheel, { passive: false });
-      canvas.addEventListener('touchstart', canvasTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', canvasTouchMove, { passive: false });
-      canvas.addEventListener('touchend', canvasTouchEnd);
-
-      document.addEventListener('touchstart', function(evt) {
-        if (evt.touches.length >= 2 && isTouchInChart(evt)) {
-          evt.preventDefault();
-          evt.stopImmediatePropagation();
-        }
-      }, true);
-      document.addEventListener('touchmove', function(evt) {
-        if (evt.touches.length >= 2 && isTouchInChart(evt)) {
-          evt.preventDefault();
-          evt.stopImmediatePropagation();
-        }
-      }, true);
+      canvas.addEventListener('pointerdown', pointerDown);
+      canvas.addEventListener('pointermove', pointerMove);
+      canvas.addEventListener('pointerup', pointerUp);
+      canvas.addEventListener('pointercancel', pointerCancel);
+      canvas.addEventListener('lostpointercapture', pointerCancel);
     })
     .catch(function(err) {
       document.getElementById('loading').style.display = 'none';
