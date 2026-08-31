@@ -60,7 +60,7 @@ canvas{width:100%!important;height:100%!important}
     <div id="chartWrap">
       <div id="chartBox">
         <canvas id="chart"></canvas>
-        <div id="zoomHint">Scroll to zoom · Drag to pan</div>
+        <div id="zoomHint">Scroll to zoom · Pinch to zoom · Tap a line</div>
       </div>
     </div>
   </div>
@@ -73,6 +73,56 @@ var FADE_START = 30;
 var FADE_END = 141;
 var HIDE_DAY = 142;
 var GOLDEN_ANGLE = 137.508;
+var CLICK_TOL = 30;
+var DEFAULT_RADIUS = 2;
+
+function distToSegmentSq(px, py, ax, ay, bx, by) {
+  var dx = bx - ax, dy = by - ay;
+  var len2 = dx * dx + dy * dy;
+  if (len2 === 0) return (px - ax) * (px - ax) + (py - ay) * (py - ay);
+  var t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+  var cx = ax + t * dx, cy = ay + t * dy;
+  return (px - cx) * (px - cx) + (py - cy) * (py - cy);
+}
+
+function onCanvasClick(evt) {
+  var chart = state.chart;
+  if (!chart) return;
+  var rect = chart.canvas.getBoundingClientRect();
+  var clickX = evt.clientX - rect.left;
+  var clickY = evt.clientY - rect.top;
+  var bestDi = -1, bestIdx = -1, bestLineDist = Infinity;
+  for (var di = 0; di < chart.data.datasets.length; di++) {
+    var ds = chart.data.datasets[di];
+    if (ds.hidden) continue;
+    var els = chart.getDatasetMeta(di).data;
+    if (!els.length) continue;
+    var lineDist = Infinity, nodeDist = Infinity, nodeIdx = -1;
+    for (var j = 0; j < els.length; j++) {
+      var el = els[j];
+      if (el.skip) continue;
+      var px = el.x, py = el.y;
+      var dNode = (clickX - px) * (clickX - px) + (clickY - py) * (clickY - py);
+      if (dNode < nodeDist) { nodeDist = dNode; nodeIdx = j; }
+      if (j > 0) {
+        var prev = els[j - 1];
+        if (prev.skip) continue;
+        var dSeg = distToSegmentSq(clickX, clickY, prev.x, prev.y, px, py);
+        if (dSeg < lineDist) lineDist = dSeg;
+      } else {
+        if (dNode < lineDist) lineDist = dNode;
+      }
+    }
+    if (lineDist < bestLineDist) { bestLineDist = lineDist; bestDi = di; bestIdx = nodeIdx; }
+  }
+  if (bestDi === -1 || bestLineDist > CLICK_TOL * CLICK_TOL) {
+    if (state.active) { state.active = null; chart.update(); }
+    return;
+  }
+  state.active = { di: bestDi, idx: bestIdx };
+  chart.tooltip.setActiveElements([{ datasetIndex: bestDi, index: bestIdx }], { x: clickX, y: clickY });
+  chart.update();
+}
 
 function graphColor(i) {
   var h = (i * GOLDEN_ANGLE) % 360;
@@ -305,8 +355,12 @@ function buildChart() {
       data: pts,
       borderColor: state.colors[name],
       backgroundColor: state.colors[name],
-      borderWidth: 1.5,
-      pointRadius: 2,
+      borderWidth: function(ctx) {
+        return state.active && ctx.datasetIndex === state.active.di ? 4 : 1.5;
+      },
+      pointRadius: function(ctx) {
+        return state.active && ctx.datasetIndex === state.active.di && ctx.dataIndex === state.active.idx ? 7 : DEFAULT_RADIUS;
+      },
       pointHoverRadius: 5,
       pointHoverBorderWidth: 2,
       tension: 0.05,
@@ -323,9 +377,12 @@ function buildChart() {
       maintainAspectRatio: false,
       layout: { padding: { bottom: 40 } },
       events: ['mousemove'],
+      animation: false,
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: true,
+          intersect: false,
           callbacks: {
             title: function(items) { return items[0].dataset.label; },
             label: function(item) {
@@ -339,7 +396,7 @@ function buildChart() {
           }
         },
         zoom: {
-          pan: { enabled: true, mode: 'x' },
+          pan: { enabled: false },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
@@ -369,11 +426,13 @@ function buildChart() {
     },
     plugins: [customXAxis]
   });
+  state.chart.canvas.addEventListener('click', onCanvasClick);
   cropAxis();
 }
 
 function updateChart() {
   if (!state.chart) return;
+  state.active = null;
   state.chart.data.datasets.forEach(function(ds) {
     ds.hidden = !!state.hidden[ds.label];
   });
