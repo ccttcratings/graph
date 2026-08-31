@@ -28,7 +28,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
 #chartWrap{flex:1;background:#fce5cd;display:flex;overflow:hidden;position:relative}
-#chartBox{position:relative;width:100%;height:100%;padding:10px}
+#chartBox{position:relative;width:100%;height:100%;padding:10px;touch-action:none}
 canvas{width:100%!important;height:100%!important}
 #loading{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);z-index:10;font-size:16px;color:#6a737d}
 #loading .spinner{width:24px;height:24px;border:3px solid #e1e4e8;border-top-color:#0366d6;border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
@@ -74,7 +74,9 @@ var FADE_END = 141;
 var HIDE_DAY = 142;
 var GOLDEN_ANGLE = 137.508;
 var CLICK_TOL = 30;
+var DRAG_TOL = 8;
 var DEFAULT_RADIUS = 2;
+var dragStart = null;
 
 function distToSegmentSq(px, py, ax, ay, bx, by) {
   var dx = bx - ax, dy = by - ay;
@@ -126,6 +128,28 @@ function onCanvasClick(evt) {
   state.active = { di: bestDi, idx: bestIdx };
   chart.tooltip.setActiveElements([{ datasetIndex: bestDi, index: bestIdx }], { x: clickX, y: clickY });
   chart.update();
+}
+
+function onCanvasPointerDown(evt) {
+  dragStart = { x: evt.clientX, y: evt.clientY };
+}
+
+function onCanvasPointerMove(evt) {
+  if (!dragStart) return;
+  var dx = evt.clientX - dragStart.x;
+  var dy = evt.clientY - dragStart.y;
+  if (Math.abs(dx) > DRAG_TOL || Math.abs(dy) > DRAG_TOL) {
+    dragStart.dragging = true;
+  }
+}
+
+function onCanvasPointerUp(evt) {
+  if (dragStart && dragStart.dragged) {
+    dragStart = null;
+    return;
+  }
+  dragStart = null;
+  onCanvasClick(evt);
 }
 
 function graphColor(i) {
@@ -399,7 +423,7 @@ function buildChart() {
           }
         },
         zoom: {
-          pan: { enabled: false },
+          pan: { enabled: true, mode: 'x', threshold: DRAG_TOL },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
@@ -429,7 +453,9 @@ function buildChart() {
     },
     plugins: [customXAxis]
   });
-  state.chart.canvas.addEventListener('click', onCanvasClick);
+  state.chart.canvas.addEventListener('pointerdown', onCanvasPointerDown);
+  state.chart.canvas.addEventListener('pointermove', onCanvasPointerMove);
+  state.chart.canvas.addEventListener('pointerup', onCanvasPointerUp);
   cropAxis();
 }
 
