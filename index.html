@@ -28,7 +28,7 @@ html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-syste
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
 #chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative;touch-action:none}
-#chartBox{position:relative;width:100%;flex:1;padding:10px;overflow:hidden;touch-action:none}
+#chartBox{position:relative;width:100%;flex:1;padding:2px;overflow:hidden;touch-action:none}
 canvas{width:100%!important;height:100%!important;touch-action:none}
 #scrollbar{position:relative;height:24px;background:#e1e4e8;border-top:1px solid #d1d5da;flex-shrink:0;cursor:pointer}
 #scrollTrack{position:absolute;top:4px;left:8px;right:8px;height:16px;background:#d1d5da;border-radius:8px}
@@ -38,8 +38,8 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 #loading .spinner{width:24px;height:24px;border:3px solid #e1e4e8;border-top-color:#0366d6;border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
-#zoomHint{position:absolute;bottom:32px;right:16px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
-#zoomBtns{position:absolute;bottom:36px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:5}
+#zoomHint{position:absolute;bottom:32px;right:6px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+#zoomBtns{position:absolute;bottom:36px;right:6px;display:flex;flex-direction:column;gap:4px;z-index:5}
 #zoomBtns button{width:40px;height:40px;border:1px solid #aaa;border-radius:6px;background:rgba(255,255,255,0.85);font-size:22px;font-weight:bold;color:#333;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;line-height:1}
 #zoomBtns button:active{background:#ddd}
 </style>
