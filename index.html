@@ -78,6 +78,7 @@ function graphColor(i) {
   var h = (i * GOLDEN_ANGLE) % 360;
   if (h >= 45 && h < 65) return 'hsl(35,72%,35%)';
   if (h >= 20 && h < 45) return 'hsl(25,72%,25%)';
+  if (h >= 65 && h < 105) return 'hsl(145,65%,32%)';
   return 'hsl(' + h + ',72%,60%)';
 }
 
@@ -403,7 +404,9 @@ function init() {
       state.series = activeSeries;
       state.colors = {};
       state.roster.forEach(function(name, i) { state.colors[name] = graphColor(i); });
-      state.colors['Kevin Krandall'] = 'hsl(140,72%,30%)';
+      state.roster.forEach(function(name) {
+        if (name.toLowerCase().indexOf('kevin krandall') !== -1) state.colors[name] = 'hsl(140,72%,30%)';
+      });
       state.hidden = {};
       activeRoster.forEach(function(name) {
         var dates = activeSeries[name];
