@@ -13,7 +13,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 #app{display:flex;flex-direction:column;height:100vh}
 #body{display:flex;flex:1;overflow:hidden}
 #sidebar{width:240px;min-width:240px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden}
-#sidebarHeader{padding:12px 14px 8px;border-bottom:1px solid #e1e4e8;background:#3E2723}
+#sidebarHeader{padding:12px 14px 8px;border-bottom:1px solid #e1e4e8}
 #logo{display:block;width:100%;max-height:110px;object-fit:contain;margin:0 0 10px;border-radius:6px}
 .toolbar{display:flex;gap:4px;margin-bottom:6px}
 .toolbar button{flex:1;padding:5px 0;border:1px solid #c9ad8a;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
@@ -23,12 +23,12 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 #count{font-size:12px;color:#6a737d;margin-bottom:4px}
 #names{flex:1;overflow-y:auto;padding:4px 0}
 .player-row{display:flex;align-items:center;padding:4px 14px;cursor:pointer;transition:background .15s;gap:8px}
-.player-row.active{background:#6B4226}
-.player-row.off{background:#3E2723;opacity:.38}
+.player-row.active{background:#fce5cd}
+.player-row.off{background:#fdf1e5;opacity:.38}
 .swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
-#chartWrap{flex:1;background:#6B4226;display:flex;overflow:hidden;position:relative}
+#chartWrap{flex:1;background:#fce5cd;display:flex;overflow:hidden;position:relative}
 #chartBox{position:relative;width:100%;height:100%;padding:10px}
 canvas{width:100%!important;height:100%!important}
 #loading{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);z-index:10;font-size:16px;color:#6a737d}
@@ -74,6 +74,8 @@ var GOLDEN_ANGLE = 137.508;
 
 function graphColor(i) {
   var h = (i * GOLDEN_ANGLE) % 360;
+  if (h >= 45 && h < 65) return 'hsl(35,72%,35%)';
+  if (h >= 20 && h < 45) return 'hsl(25,72%,25%)';
   return 'hsl(' + h + ',72%,60%)';
 }
 
