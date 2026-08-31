@@ -95,7 +95,7 @@ var DEFAULT_RADIUS = 2;
 var MIN_SPAN = 86400000 * 3;
 var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
 var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false };
-var pinchState = { active: false, lastDist: 0, startMin: 0, startMax: 0 };
+var pinchState = { active: false, startDist: 0, startMin: 0, startMax: 0 };
 var thumbDrag = { active: false, startX: 0, startMin: 0, startMax: 0 };
 
 function zoomIn() {
@@ -267,7 +267,7 @@ function pointerDown(evt) {
     var ids = Object.keys(pointerState);
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
-    pinchState.lastDist = Math.sqrt(dx * dx + dy * dy);
+    pinchState.startDist = Math.sqrt(dx * dx + dy * dy);
   } else if (count === 1) {
     panState.active = true;
     panState.startX = evt.clientX;
@@ -287,8 +287,8 @@ function pointerMove(evt) {
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     var dist = Math.sqrt(dx * dx + dy * dy);
-    if (pinchState.lastDist > 0) {
-      var scale = pinchState.lastDist / dist;
+    if (pinchState.startDist > 0) {
+      var scale = pinchState.startDist / dist;
       var span = (pinchState.startMax - pinchState.startMin) * scale;
       span = Math.max(MIN_SPAN, Math.min(view.dataMax - view.dataMin, span));
       var center = (pinchState.startMin + pinchState.startMax) / 2;
@@ -297,7 +297,6 @@ function pointerMove(evt) {
       clampView();
       applyView(true);
     }
-    pinchState.lastDist = dist;
   } else if (count === 1 && panState.active && !pinchState.active) {
     var dx2 = evt.clientX - panState.startX;
     if (Math.abs(dx2) > DRAG_TOL) panState.didDrag = true;
@@ -321,7 +320,7 @@ function pointerUp(evt) {
   var count = Object.keys(pointerState).length;
   if (count < 2) {
     pinchState.active = false;
-    pinchState.lastDist = 0;
+    pinchState.startDist = 0;
     if (wasPinch) applyView();
   }
   if (count === 0) {
@@ -339,7 +338,7 @@ function pointerCancel(evt) {
   var count = Object.keys(pointerState).length;
   if (count < 2) {
     pinchState.active = false;
-    pinchState.lastDist = 0;
+    pinchState.startDist = 0;
   }
   if (count === 0) {
     panState.active = false;
