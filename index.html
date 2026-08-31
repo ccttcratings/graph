@@ -92,7 +92,7 @@ var GOLDEN_ANGLE = 137.508;
 var CLICK_TOL = 30;
 var DRAG_TOL = 8;
 var DEFAULT_RADIUS = 2;
-var MIN_SPAN = 86400000 * 7;
+var MIN_SPAN = 86400000 * 3;
 var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
 var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false };
 var pinchState = { active: false, lastDist: 0, startMin: 0, startMax: 0 };
@@ -592,7 +592,9 @@ var customXAxis = {
     ctx.lineWidth = 2;
     Object.keys(years).forEach(function(y) {
       if (parseInt(y) === Object.keys(years).sort()[0]) return;
-      var x = xScale.getPixelForValue(years[y].min);
+      var jan1 = new Date(parseInt(y), 0, 1).getTime();
+      var x = xScale.getPixelForValue(jan1);
+      if (x < area.left || x > area.right) return;
       ctx.beginPath();
       ctx.moveTo(x, area.top);
       ctx.lineTo(x, area.bottom);
