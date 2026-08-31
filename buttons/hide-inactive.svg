@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="70" viewBox="0 0 220 70">
+  <defs>
+    <linearGradient id="pTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ece4f5"/>
+      <stop offset="100%" stop-color="#d9d2e9"/>
+    </linearGradient>
+    <linearGradient id="pLeft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e4dcf0"/>
+      <stop offset="100%" stop-color="#d9d2e9"/>
+    </linearGradient>
+    <linearGradient id="pBottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9080b0"/>
+      <stop offset="100%" stop-color="#6a5a8a"/>
+    </linearGradient>
+    <linearGradient id="pRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a090c0"/>
+      <stop offset="100%" stop-color="#7a6a9a"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer border -->
+  <rect x="1" y="1" width="218" height="68" fill="none" stroke="#000" stroke-width="2"/>
+  <!-- Top bevel -->
+  <polygon points="3,3 217,3 209,11 11,11" fill="url(#pTop)" stroke="#000" stroke-width="1"/>
+  <!-- Bottom bevel -->
+  <polygon points="11,59 209,59 217,67 3,67" fill="url(#pBottom)" stroke="#000" stroke-width="1"/>
+  <!-- Left bevel -->
+  <polygon points="3,3 11,11 11,59 3,67" fill="url(#pLeft)" stroke="#000" stroke-width="1"/>
+  <!-- Right bevel -->
+  <polygon points="217,3 209,11 209,59 217,67" fill="url(#pRight)" stroke="#000" stroke-width="1"/>
+  <!-- Center fill -->
+  <rect x="11" y="11" width="198" height="48" fill="#d9d2e9" stroke="#000" stroke-width="1"/>
+  <!-- Text -->
+  <text x="110" y="32" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000">Hide</text>
+  <text x="110" y="50" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000">Inactive</text>
+</svg>
