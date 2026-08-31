@@ -254,6 +254,7 @@ function canvasMouseUp(evt) {
 var pointerState = {};
 
 function pointerDown(evt) {
+  if (evt.pointerType !== 'touch') return;
   evt.preventDefault();
   state.chart.canvas.setPointerCapture(evt.pointerId);
   pointerState[evt.pointerId] = { x: evt.clientX, y: evt.clientY };
@@ -277,6 +278,7 @@ function pointerDown(evt) {
 }
 
 function pointerMove(evt) {
+  if (evt.pointerType !== 'touch') return;
   if (!pointerState[evt.pointerId]) return;
   pointerState[evt.pointerId] = { x: evt.clientX, y: evt.clientY };
   var count = Object.keys(pointerState).length;
@@ -313,6 +315,7 @@ function pointerMove(evt) {
 }
 
 function pointerUp(evt) {
+  if (evt.pointerType !== 'touch') return;
   var wasPinch = pinchState.active;
   delete pointerState[evt.pointerId];
   var count = Object.keys(pointerState).length;
@@ -330,6 +333,7 @@ function pointerUp(evt) {
 }
 
 function pointerCancel(evt) {
+  if (evt.pointerType !== 'touch') return;
   var wasPinch = pinchState.active;
   delete pointerState[evt.pointerId];
   var count = Object.keys(pointerState).length;
@@ -793,6 +797,7 @@ function init() {
       applyView();
       initScrollbar();
 
+      var canvas = state.chart.canvas;
       canvas.addEventListener('mousedown', canvasMouseDown);
       canvas.addEventListener('mousemove', canvasMouseMove);
       canvas.addEventListener('mouseup', canvasMouseUp);
