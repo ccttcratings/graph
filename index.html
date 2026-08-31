@@ -14,8 +14,10 @@ html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-syste
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
 #sidebar{width:180px;min-width:180px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;transition:margin-left .25s ease,opacity .25s ease;position:relative}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
-#collapseHandle{width:18px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;background:#fff;border:1px solid #e1e4e8;border-left:none;border-radius:0 6px 6px 0;transition:background .15s;flex-shrink:0;touch-action:manipulation}
-#collapseHandle:hover{background:#f0f0f0;color:#333}
+#collapseHandle{width:18px;cursor:ew-resize;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#fff;border-left:3px double #ffa5a5;border-right:3px double #ffa5a5;transition:background .15s;flex-shrink:0;touch-action:none;user-select:none}
+#collapseHandle:hover{background:#fdf1e5}
+#collapseHandle .ch-arrow{color:#c5eec5;font-size:12px;line-height:1}
+#collapseHandle .ch-label{writing-mode:vertical-rl;text-orientation:mixed;font-size:11px;font-weight:bold;color:#c5eec5;letter-spacing:1px}
 #sidebarTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:24px;height:60px;background:#fdf1e5;border:1px solid #e1e4e8;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;z-index:10;align-items:center;justify-content:center;font-size:13px;color:#6a737d;touch-action:manipulation;transition:background .15s}
 #sidebarTab:hover{background:#f0e0c8}
 #sidebarTab.show{display:flex}
@@ -68,7 +70,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
       </div>
       <div id="names"></div>
     </div>
-    <div id="collapseHandle" onclick="collapseSidebar()">&#9664;</div>
+    <div id="collapseHandle" onclick="collapseSidebar()"><span class="ch-arrow">&#9650;</span><span class="ch-label">Rating</span><span class="ch-arrow">&#9660;</span></div>
     <div id="sidebarTab" onclick="expandSidebar()">&#9654;</div>
     <div id="chartWrap">
       <div id="chartBox">
@@ -831,24 +833,43 @@ document.querySelectorAll('.toolbar img').forEach(function(img) {
   });
 });
 
-var sidebarDrag = { active: false, startX: 0 };
+var sidebarDrag = { active: false, startX: 0, captured: false, ptrId: null };
 
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   sidebar.addEventListener('pointerdown', function(evt) {
-    if (evt.pointerType !== 'touch') return;
     sidebarDrag.active = true;
+    sidebarDrag.captured = false;
     sidebarDrag.startX = evt.clientX;
+    sidebarDrag.ptrId = evt.pointerId;
   });
   document.addEventListener('pointermove', function(evt) {
-    if (!sidebarDrag.active || evt.pointerType !== 'touch') return;
-    var dx = evt.clientX - sidebarDrag.startX;
-    if (dx < -60) {
-      sidebarDrag.active = false;
-      collapseSidebar();
+    if (!sidebarDrag.active || evt.pointerId !== sidebarDrag.ptrId) return;
+    if (!sidebarDrag.captured && Math.abs(evt.clientX - sidebarDrag.startX) > 8) {
+      sidebarDrag.captured = true;
+    }
+    if (sidebarDrag.captured) {
+      var dx = evt.clientX - sidebarDrag.startX;
+      if (dx < -60) {
+        sidebarDrag.active = false;
+        collapseSidebar();
+      }
     }
   });
-  document.addEventListener('pointerup', function() { sidebarDrag.active = false; });
+  document.addEventListener('pointerup', function(evt) {
+    if (evt.pointerId === sidebarDrag.ptrId) {
+      sidebarDrag.active = false;
+      sidebarDrag.captured = false;
+      sidebarDrag.ptrId = null;
+    }
+  });
+  document.addEventListener('pointercancel', function(evt) {
+    if (evt.pointerId === sidebarDrag.ptrId) {
+      sidebarDrag.active = false;
+      sidebarDrag.captured = false;
+      sidebarDrag.ptrId = null;
+    }
+  });
 }
 
 function collapseSidebar() {
