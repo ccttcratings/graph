@@ -28,8 +28,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
 #chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative}
-#chartBox{position:relative;width:100%;flex:1;padding:10px;overflow:hidden}
-canvas{width:100%!important;height:100%!important}
+#chartBox{position:relative;width:100%;flex:1;padding:10px;overflow:hidden;touch-action:none}
+canvas{width:100%!important;height:100%!important;touch-action:none}
 #scrollbar{position:relative;height:24px;background:#e1e4e8;border-top:1px solid #d1d5da;flex-shrink:0;cursor:pointer}
 #scrollTrack{position:absolute;top:4px;left:8px;right:8px;height:16px;background:#d1d5da;border-radius:8px}
 #scrollThumb{position:absolute;top:0;height:16px;background:#6a737d;border-radius:8px;cursor:grab;min-width:24px;transition:none}
@@ -182,6 +182,11 @@ function canvasMouseDown(evt) {
   panState.startMin = view.min;
   panState.startMax = view.max;
   panState.didDrag = false;
+  if (state.active) {
+    state.active = null;
+    state.chart.tooltip.setActiveElements([]);
+    state.chart.update();
+  }
 }
 
 function canvasMouseMove(evt) {
@@ -208,6 +213,11 @@ function canvasMouseUp(evt) {
 }
 
 function canvasTouchStart(evt) {
+  if (state.active) {
+    state.active = null;
+    state.chart.tooltip.setActiveElements([]);
+    state.chart.update();
+  }
   if (evt.touches.length === 2) {
     evt.preventDefault();
     panState.active = false;
@@ -621,6 +631,11 @@ function buildChart() {
         legend: { display: false },
         tooltip: {
           enabled: true,
+          backgroundColor: 'rgba(40,40,40,0.55)',
+          titleFont: { weight: 'bold' },
+          bodyFont: { weight: '600' },
+          padding: 10,
+          cornerRadius: 6,
           callbacks: {
             title: function(items) { return items[0].dataset.label; },
             label: function(item) {
