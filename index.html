@@ -1,1 +1,448 @@
-https://docs.google.com/spreadsheets/d/e/2PACX-1vQX7guKy-_ONzc6nuCWGLu2UmfLRb5CvD60e8s035PNeGNqz5L2_NtZ00fbmq0eb8HOhgSryIpbVYz-/pub?gid=795365907&single=true&output=csv
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCTTC Ratings Graph</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
+#app{display:flex;flex-direction:column;height:100vh}
+#body{display:flex;flex:1;overflow:hidden}
+#sidebar{width:240px;min-width:240px;background:#fff;border-right:1px solid #e1e4e8;display:flex;flex-direction:column;overflow:hidden}
+#sidebarHeader{padding:12px 14px 8px;border-bottom:1px solid #e1e4e8}
+#logo{max-height:110px;display:block;margin:0 auto 8px}
+.toolbar{display:flex;gap:4px;margin-bottom:6px}
+.toolbar button{flex:1;padding:5px 0;border:1px solid #c9ad8a;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+#showAll{background:#c5eec5}.#showAll:hover{background:#aee4ae}
+#hideInactive{background:#d9d2e9}#hideInactive:hover{background:#c4badb}
+#hideAll{background:#ffa5a5}#hideAll:hover{background:#f28d8d}
+#count{font-size:12px;color:#6a737d;margin-bottom:4px}
+#names{flex:1;overflow-y:auto;padding:4px 0}
+.player-row{display:flex;align-items:center;padding:4px 14px;cursor:pointer;transition:background .15s;gap:8px}
+.player-row.active{background:#fce5cd}
+.player-row.off{background:#fdf1e5;opacity:.38}
+.swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chartWrap{flex:1;background:#fce5cd;display:flex;overflow:hidden;position:relative}
+#chartBox{position:relative;width:100%;height:100%;padding:10px}
+canvas{width:100%!important;height:100%!important}
+#loading{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);z-index:10;font-size:16px;color:#6a737d}
+#loading .spinner{width:24px;height:24px;border:3px solid #e1e4e8;border-top-color:#0366d6;border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
+#zoomHint{position:absolute;bottom:8px;right:16px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="error"></div>
+  <div id="loading"><div class="spinner"></div>Loading ratings data...</div>
+  <div id="body">
+    <div id="sidebar">
+      <div id="sidebarHeader">
+        <div class="toolbar">
+          <button id="showAll">Select All</button>
+          <button id="hideInactive">Hide Inactive</button>
+          <button id="hideAll">Clear</button>
+        </div>
+        <div id="count"></div>
+      </div>
+      <div id="names"></div>
+    </div>
+    <div id="chartWrap">
+      <div id="chartBox">
+        <canvas id="chart"></canvas>
+        <div id="zoomHint">Scroll to zoom · Drag to pan</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX7guKy-_ONzc6nuCWGLu2UmfLRb5CvD60e8s035PNeGNqz5L2_NtZ00fbmq0eb8HOhgSryIpbVYz-/pub?gid=795365907&single=true&output=csv';
+var LS_KEY = 'ttRatingsGraphHidden';
+var FADE_START = 30;
+var FADE_END = 141;
+var HIDE_DAY = 142;
+var GOLDEN_ANGLE = 137.508;
+
+function graphColor(i) {
+  var h = (i * GOLDEN_ANGLE) % 360;
+  return 'hsl(' + h + ',72%,60%)';
+}
+
+function parseDate(s) {
+  s = s.trim().replace(/^"|"$/g, '');
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function daysBetween(a, b) {
+  return Math.floor((b.getTime() - a.getTime()) / 86400000);
+}
+
+function getFadeColor(daysInactive) {
+  if (daysInactive >= 30 && daysInactive <= 43) return '#5e554c';
+  if (daysInactive >= 44 && daysInactive <= 57) return '#807468';
+  if (daysInactive >= 58 && daysInactive <= 71) return '#9a8c7d';
+  if (daysInactive >= 72 && daysInactive <= 85) return '#af9f8e';
+  if (daysInactive >= 86 && daysInactive <= 99) return '#c1b09d';
+  if (daysInactive >= 100 && daysInactive <= 113) return '#d2bfab';
+  if (daysInactive >= 114 && daysInactive <= 127) return '#e1cdb7';
+  if (daysInactive >= 128 && daysInactive <= 141) return '#efd9c2';
+  return null;
+}
+
+function parseCSV(text) {
+  var lines = text.split('\n');
+  var series = {};
+  var playerDates = {};
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var match = line.match(/^([^,]+),"?([^"]+)"?,(.+)$/);
+    if (!match) continue;
+    var player = match[1].trim();
+    var date = parseDate(match[2]);
+    var rating = parseFloat(match[3]);
+    if (!player || !date || isNaN(rating)) continue;
+    if (!series[player]) { series[player] = []; playerDates[player] = date; }
+    series[player].push([date, rating]);
+    if (date > playerDates[player]) playerDates[player] = date;
+  }
+  for (var p in series) {
+    series[p].sort(function(a, b) { return a[0].getTime() - b[0].getTime(); });
+  }
+  var roster = Object.keys(series).sort(function(a, b) {
+    var la = playerDates[a], lb = playerDates[b];
+    return lb.getTime() - la.getTime();
+  });
+  return { roster: roster, series: series, lastDates: playerDates };
+}
+
+var state = {
+  hidden: {},
+  chart: null,
+  active: null,
+  roster: [],
+  series: {},
+  colors: {}
+};
+
+function loadHidden() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach(function(n) { state.hidden[n] = true; });
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function saveHidden() {
+  var arr = [];
+  for (var n in state.hidden) { if (state.hidden[n]) arr.push(n); }
+  localStorage.setItem(LS_KEY, JSON.stringify(arr));
+}
+
+function isPlayerActive(name) {
+  if (state.hidden[name]) return false;
+  var dates = state.series[name];
+  if (!dates || dates.length === 0) return false;
+  var lastMs = dates[dates.length - 1][0].getTime();
+  var now = Date.now();
+  var days = Math.floor((now - lastMs) / 86400000);
+  return days < FADE_START;
+}
+
+function buildSidebar() {
+  var container = document.getElementById('names');
+  container.innerHTML = '';
+  var shown = 0;
+  state.roster.forEach(function(name, i) {
+    var dates = state.series[name];
+    var lastMs = dates[dates.length - 1][0].getTime();
+    var days = Math.floor((Date.now() - lastMs) / 86400000);
+    var fade = getFadeColor(days);
+    var hidden = state.hidden[name];
+    var row = document.createElement('div');
+    row.className = 'player-row' + (hidden ? ' off' : ' active');
+    var swatch = document.createElement('div');
+    swatch.className = 'swatch';
+    swatch.style.background = state.colors[name];
+    var pname = document.createElement('div');
+    pname.className = 'pname';
+    pname.textContent = name;
+    if (fade && !hidden) pname.style.color = fade;
+    row.appendChild(swatch);
+    row.appendChild(pname);
+    row.addEventListener('click', function() {
+      state.hidden[name] = !state.hidden[name];
+      saveHidden();
+      updateChart();
+      buildSidebar();
+    });
+    container.appendChild(row);
+    if (!hidden) shown++;
+  });
+  document.getElementById('count').textContent = shown + ' of ' + state.roster.length + ' shown';
+}
+
+function cropAxis() {
+  var chart = state.chart;
+  if (!chart) return;
+  var min = Infinity, max = -Infinity;
+  chart.data.datasets.forEach(function(ds) {
+    if (ds.hidden) return;
+    ds.data.forEach(function(pt) {
+      if (pt.y < min) min = pt.y;
+      if (pt.y > max) max = pt.y;
+    });
+  });
+  if (min === Infinity) { min = 800; max = 1200; }
+  var pad = Math.max((max - min) * 0.08, 10);
+  min = Math.floor((min - pad) / 10) * 10;
+  max = Math.ceil((max + pad) / 10) * 10;
+  chart.options.scales.y.min = min;
+  chart.options.scales.y.max = max;
+  chart.update('none');
+}
+
+var customXAxis = {
+  id: 'customXAxis',
+  beforeDatasetsDraw: function(chart) {
+    var ctx = chart.ctx;
+    var area = chart.chartArea;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+    var xScale = chart.scales.x;
+    var ticks = xScale.ticks || [];
+    var years = {};
+    ticks.forEach(function(t) {
+      var d = new Date(t.value);
+      var y = d.getFullYear();
+      if (!years[y]) years[y] = { min: t.value, max: t.value };
+      else { years[y].min = Math.min(years[y].min, t.value); years[y].max = Math.max(years[y].max, t.value); }
+    });
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 1;
+    Object.keys(years).forEach(function(y) {
+      if (parseInt(y) === Object.keys(years).sort()[0]) return;
+      var x = xScale.getPixelForValue(years[y].min);
+      ctx.beginPath();
+      ctx.moveTo(x, area.top);
+      ctx.lineTo(x, area.bottom);
+      ctx.stroke();
+    });
+    ctx.restore();
+  },
+  afterDatasetsDraw: function(chart) {
+    var ctx = chart.ctx;
+    var area = chart.chartArea;
+    var xScale = chart.scales.x;
+    var ticks = xScale.ticks || [];
+    ctx.save();
+    ctx.font = 'bold 11px -apple-system,sans-serif';
+    ctx.fillStyle = '#6a737d';
+    ctx.textAlign = 'center';
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var prevMonth = -1;
+    var prevYear = -1;
+    var monthPositions = [];
+    ticks.forEach(function(t) {
+      var d = new Date(t.value);
+      var m = d.getMonth();
+      var y = d.getFullYear();
+      var x = xScale.getPixelForValue(t.value);
+      ctx.beginPath();
+      ctx.moveTo(x, area.bottom);
+      ctx.lineTo(x, area.bottom + 4);
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.stroke();
+      if (m !== prevMonth || y !== prevYear) {
+        monthPositions.push({ month: m, year: y, x: x });
+        prevMonth = m;
+        prevYear = y;
+      }
+    });
+    for (var i = 0; i < monthPositions.length; i++) {
+      var mp = monthPositions[i];
+      var nextX = (i < monthPositions.length - 1) ? monthPositions[i + 1].x : area.right;
+      var cx = (mp.x + nextX) / 2;
+      if (nextX - mp.x > 45) {
+        ctx.fillStyle = '#6a737d';
+        ctx.font = 'bold 11px -apple-system,sans-serif';
+        ctx.fillText(monthNames[mp.month], cx, area.bottom + 18);
+      }
+    }
+    var yearGroups = {};
+    monthPositions.forEach(function(mp) {
+      if (!yearGroups[mp.year]) yearGroups[mp.year] = { min: mp.x, max: mp.x };
+      else { yearGroups[mp.year].min = Math.min(yearGroups[mp.year].min, mp.x); yearGroups[mp.year].max = Math.max(yearGroups[mp.year].max, mp.x); }
+    });
+    ctx.font = 'bold 13px -apple-system,sans-serif';
+    ctx.fillStyle = '#24292f';
+    Object.keys(yearGroups).forEach(function(y) {
+      var yg = yearGroups[y];
+      var cx = (yg.min + yg.max) / 2;
+      ctx.fillText(y, cx, area.bottom + 34);
+    });
+    ctx.restore();
+  }
+};
+
+function buildChart() {
+  var datasets = [];
+  state.roster.forEach(function(name, i) {
+    var pts = state.series[name].map(function(r) { return { x: r[0], y: r[1] }; });
+    datasets.push({
+      label: name,
+      data: pts,
+      borderColor: state.colors[name],
+      backgroundColor: state.colors[name],
+      borderWidth: 1.5,
+      pointRadius: 2,
+      pointHoverRadius: 5,
+      pointHoverBorderWidth: 2,
+      tension: 0.05,
+      spanGaps: false,
+      hidden: !!state.hidden[name]
+    });
+  });
+  var ctx = document.getElementById('chart').getContext('2d');
+  state.chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ['mousemove'],
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: function(items) { return items[0].dataset.label; },
+            label: function(item) {
+              var d = new Date(item.parsed.x);
+              var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              var ds = months[d.getMonth()] + ' ' + d.getDate() + ', ' + String(d.getFullYear()).slice(2);
+              var v = item.parsed.y;
+              var vs = v === Math.floor(v) ? String(v) : v.toFixed(1);
+              return ds + '  \u00b7  ' + vs;
+            }
+          }
+        },
+        zoom: {
+          pan: { enabled: true, mode: 'x' },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x'
+          },
+          limits: {
+            x: { minRange: 86400000 * 7 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'month' },
+          grid: { color: 'rgba(0,0,0,0.08)' },
+          border: { display: false },
+          ticks: { display: false }
+        },
+        y: {
+          type: 'linear',
+          grid: { color: 'rgba(0,0,0,0.08)' },
+          border: { display: false },
+          ticks: { font: { weight: 'bold' } },
+          title: { display: true, text: 'Rating', font: { size: 14, weight: 'bold' } }
+        }
+      }
+    },
+    plugins: [customXAxis]
+  });
+  cropAxis();
+}
+
+function updateChart() {
+  if (!state.chart) return;
+  state.chart.data.datasets.forEach(function(ds) {
+    ds.hidden = !!state.hidden[ds.label];
+  });
+  state.chart.update();
+  cropAxis();
+}
+
+function init() {
+  var hadChoice = loadHidden();
+  fetch(CSV_URL)
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      var data = parseCSV(csv);
+      state.roster = data.roster;
+      state.series = data.series;
+      state.colors = {};
+      data.roster.forEach(function(name, i) { state.colors[name] = graphColor(i); });
+      if (!hadChoice) {
+        state.hidden = {};
+        data.roster.forEach(function(name) {
+          if (!isPlayerActive(name)) state.hidden[name] = true;
+        });
+        saveHidden();
+      }
+      document.getElementById('loading').style.display = 'none';
+      buildSidebar();
+      buildChart();
+    })
+    .catch(function(err) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Failed to load data: ' + err.message;
+    });
+}
+
+document.getElementById('showAll').addEventListener('click', function() {
+  state.hidden = {};
+  saveHidden();
+  updateChart();
+  buildSidebar();
+});
+
+document.getElementById('hideAll').addEventListener('click', function() {
+  state.roster.forEach(function(n) { state.hidden[n] = true; });
+  saveHidden();
+  updateChart();
+  buildSidebar();
+});
+
+document.getElementById('hideInactive').addEventListener('click', function() {
+  state.hidden = {};
+  state.roster.forEach(function(n) {
+    if (!isPlayerActive(n)) state.hidden[n] = true;
+  });
+  saveHidden();
+  updateChart();
+  buildSidebar();
+});
+
+var watchdog = setTimeout(function() {
+  document.getElementById('loading').innerHTML = '<div style="text-align:center">Loading took too long. Please refresh the page.</div>';
+}, 40000);
+
+init();
+clearTimeout(watchdog);
+</script>
+</body>
+</html>
