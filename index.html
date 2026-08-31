@@ -27,7 +27,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
-#chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative;touch-action:none}
 #chartBox{position:relative;width:100%;flex:1;padding:10px;overflow:hidden;touch-action:none}
 canvas{width:100%!important;height:100%!important;touch-action:none}
 #scrollbar{position:relative;height:24px;background:#e1e4e8;border-top:1px solid #d1d5da;flex-shrink:0;cursor:pointer}
@@ -151,6 +151,17 @@ function clampView() {
   if (view.min < view.dataMin) view.min = view.dataMin;
 }
 
+function followTooltip() {
+  var chart = state.chart;
+  if (!chart || !state.active) return;
+  var meta = chart.getDatasetMeta(state.active.di);
+  if (!meta || !meta.data[state.active.idx]) return;
+  var el = meta.data[state.active.idx];
+  if (el.skip) { chart.tooltip.setActiveElements([]); chart.update(); return; }
+  chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
+  chart.update('none');
+}
+
 function applyView() {
   var chart = state.chart;
   if (!chart) return;
@@ -159,6 +170,7 @@ function applyView() {
   chart.update('none');
   cropAxis();
   updateScrollThumb();
+  followTooltip();
 }
 
 function updateScrollThumb() {
@@ -182,11 +194,6 @@ function canvasMouseDown(evt) {
   panState.startMin = view.min;
   panState.startMax = view.max;
   panState.didDrag = false;
-  if (state.active) {
-    state.active = null;
-    state.chart.tooltip.setActiveElements([]);
-    state.chart.update();
-  }
 }
 
 function canvasMouseMove(evt) {
@@ -213,11 +220,7 @@ function canvasMouseUp(evt) {
 }
 
 function canvasTouchStart(evt) {
-  if (state.active) {
-    state.active = null;
-    state.chart.tooltip.setActiveElements([]);
-    state.chart.update();
-  }
+  evt.preventDefault();
   if (evt.touches.length === 2) {
     evt.preventDefault();
     panState.active = false;
@@ -739,10 +742,12 @@ function init() {
       canvas.addEventListener('mousemove', canvasMouseMove);
       canvas.addEventListener('mouseup', canvasMouseUp);
       canvas.addEventListener('mouseleave', function() { panState.active = false; panState.didDrag = false; });
-      canvas.addEventListener('touchstart', canvasTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', canvasTouchMove, { passive: false });
-      canvas.addEventListener('touchend', canvasTouchEnd);
       canvas.addEventListener('wheel', canvasWheel, { passive: false });
+
+      var chartBox = document.getElementById('chartBox');
+      chartBox.addEventListener('touchstart', canvasTouchStart, { passive: false });
+      chartBox.addEventListener('touchmove', canvasTouchMove, { passive: false });
+      chartBox.addEventListener('touchend', canvasTouchEnd);
     })
     .catch(function(err) {
       document.getElementById('loading').style.display = 'none';
