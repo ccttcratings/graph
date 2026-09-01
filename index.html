@@ -904,9 +904,16 @@ function initSidebarSwipe() {
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active || evt.pointerType !== 'touch') return;
     var dx = evt.clientX - sidebarDrag.startX;
-    if (dx < -60) {
-      sidebarDrag.active = false;
-      collapseSidebar();
+    if (sidebar.classList.contains('collapsed')) {
+      if (dx > 60) {
+        sidebarDrag.active = false;
+        expandSidebar();
+      }
+    } else {
+      if (dx < -60) {
+        sidebarDrag.active = false;
+        collapseSidebar();
+      }
     }
   });
   document.addEventListener('pointerup', function(evt) {
@@ -917,7 +924,7 @@ function initSidebarSwipe() {
 function collapseSidebar() {
   document.getElementById('sidebar').classList.add('collapsed');
   document.getElementById('collapseHandle').style.display = 'none';
-  document.getElementById('swipeZone').style.display = 'none';
+  document.getElementById('swipeZone').style.width = '24px';
   document.getElementById('sidebarTab').classList.add('show');
   if (state.chart) { state.chart.resize(); updateSwipeZone(); }
 }
@@ -925,7 +932,7 @@ function collapseSidebar() {
 function expandSidebar() {
   document.getElementById('sidebar').classList.remove('collapsed');
   document.getElementById('collapseHandle').style.display = '';
-  document.getElementById('swipeZone').style.display = '';
+  updateSwipeZone();
   document.getElementById('sidebarTab').classList.remove('show');
   if (state.chart) { state.chart.resize(); updateSwipeZone(); }
 }
