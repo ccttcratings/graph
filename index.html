@@ -46,7 +46,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 #loading .spinner{width:24px;height:24px;border:3px solid #e1e4e8;border-top-color:#0366d6;border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
-#zoomHint{position:absolute;bottom:32px;right:6px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+#zoomHint{display:none;position:absolute;bottom:32px;right:6px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
 
 </style>
 </head>
@@ -75,7 +75,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
     <div id="chartWrap">
       <div id="chartBox">
         <canvas id="chart"></canvas>
-        <div id="zoomHint">Scroll to zoom · Drag to pan · Pinch to zoom · Tap a line</div>
+        <div id="zoomHint"></div>
       </div>
       <div id="scrollbar">
         <div id="scrollTrack">
