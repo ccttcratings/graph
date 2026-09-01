@@ -56,6 +56,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
 #zoomHint{display:none;position:absolute;bottom:32px;right:6px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+#swipeZone{position:absolute;top:0;left:0;width:60px;height:100%;z-index:5;touch-action:pan-y}
 
 </style>
 </head>
@@ -82,6 +83,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
     <div id="collapseHandle" onclick="collapseSidebar()"><div class="red"></div><div class="red"></div></div>
     <div id="sidebarTab" onclick="expandSidebar()">&#9654;</div>
     <div id="chartWrap">
+      <div id="swipeZone"></div>
       <div id="chartBox">
         <canvas id="chart"></canvas>
         <div id="zoomHint"></div>
@@ -827,6 +829,7 @@ function init() {
       clampView();
       applyView();
       initScrollbar();
+      updateSwipeZone();
 
       var canvas = state.chart.canvas;
       canvas.addEventListener('mousedown', canvasMouseDown);
@@ -879,15 +882,25 @@ document.querySelectorAll('.toolbar img').forEach(function(img) {
   });
 });
 
+function updateSwipeZone() {
+  if (!state.chart) return;
+  var yScale = state.chart.scales.y;
+  var zone = document.getElementById('swipeZone');
+  if (zone && yScale) zone.style.width = yScale.right + 'px';
+}
+
 var sidebarDrag = { active: false, startX: 0 };
 
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
-  sidebar.addEventListener('pointerdown', function(evt) {
+  var swipeZone = document.getElementById('swipeZone');
+  function startSwipe(evt) {
     if (evt.pointerType !== 'touch') return;
     sidebarDrag.active = true;
     sidebarDrag.startX = evt.clientX;
-  });
+  }
+  sidebar.addEventListener('pointerdown', startSwipe);
+  swipeZone.addEventListener('pointerdown', startSwipe);
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active || evt.pointerType !== 'touch') return;
     var dx = evt.clientX - sidebarDrag.startX;
@@ -904,16 +917,20 @@ function initSidebarSwipe() {
 function collapseSidebar() {
   document.getElementById('sidebar').classList.add('collapsed');
   document.getElementById('collapseHandle').style.display = 'none';
+  document.getElementById('swipeZone').style.display = 'none';
   document.getElementById('sidebarTab').classList.add('show');
-  if (state.chart) state.chart.resize();
+  if (state.chart) { state.chart.resize(); updateSwipeZone(); }
 }
 
 function expandSidebar() {
   document.getElementById('sidebar').classList.remove('collapsed');
   document.getElementById('collapseHandle').style.display = '';
+  document.getElementById('swipeZone').style.display = '';
   document.getElementById('sidebarTab').classList.remove('show');
-  if (state.chart) state.chart.resize();
+  if (state.chart) { state.chart.resize(); updateSwipeZone(); }
 }
+
+window.addEventListener('resize', function() { if (state.chart) updateSwipeZone(); });
 
 var watchdog = setTimeout(function() {
   document.getElementById('loading').innerHTML = '<div style="text-align:center">Loading took too long. Please refresh the page.</div>';
