@@ -56,7 +56,8 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
 #zoomHint{display:none;position:absolute;bottom:32px;right:6px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
-#swipeZone{position:absolute;top:0;left:0;width:60px;height:100%;z-index:5;touch-action:pan-y}
+#swipeZone{position:absolute;top:0;left:0;width:60px;height:100%;z-index:5;touch-action:pan-y;cursor:grab;user-select:none}
+#swipeZone.dragging{cursor:grabbing}
 
 </style>
 </head>
@@ -895,29 +896,35 @@ function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
   function startSwipe(evt) {
-    if (evt.pointerType !== 'touch') return;
+    if (evt.button && evt.button !== 0) return;
     sidebarDrag.active = true;
     sidebarDrag.startX = evt.clientX;
+    swipeZone.classList.add('dragging');
   }
   sidebar.addEventListener('pointerdown', startSwipe);
   swipeZone.addEventListener('pointerdown', startSwipe);
   document.addEventListener('pointermove', function(evt) {
-    if (!sidebarDrag.active || evt.pointerType !== 'touch') return;
+    if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
     if (sidebar.classList.contains('collapsed')) {
       if (dx > 60) {
         sidebarDrag.active = false;
+        swipeZone.classList.remove('dragging');
         expandSidebar();
       }
     } else {
       if (dx < -60) {
         sidebarDrag.active = false;
+        swipeZone.classList.remove('dragging');
         collapseSidebar();
       }
     }
   });
   document.addEventListener('pointerup', function(evt) {
-    if (evt.pointerType === 'touch') sidebarDrag.active = false;
+    if (sidebarDrag.active) {
+      sidebarDrag.active = false;
+      swipeZone.classList.remove('dragging');
+    }
   });
 }
 
