@@ -892,12 +892,13 @@ var sidebarDrag = { active: false, startX: 0 };
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
+  var dragHistory = [];
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
     sidebarDrag.active = true;
     sidebarDrag.startX = evt.clientX;
-    sidebarDrag.lastX = evt.clientX;
     sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
+    dragHistory = [evt.clientX];
     sidebar.style.transition = 'none';
     swipeZone.classList.add('dragging');
   }
@@ -908,7 +909,8 @@ function initSidebarSwipe() {
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
-    sidebarDrag.lastX = evt.clientX;
+    dragHistory.push(evt.clientX);
+    if (dragHistory.length > 10) dragHistory.shift();
     if (sidebarDrag.wasCollapsed) {
       var newMargin = Math.min(0, Math.max(-180, -180 + dx));
       sidebar.style.marginLeft = newMargin + 'px';
@@ -924,12 +926,18 @@ function initSidebarSwipe() {
     sidebarDrag.active = false;
     swipeZone.classList.remove('dragging');
     sidebar.style.transition = '';
-    var direction = evt.clientX - sidebarDrag.lastX;
-    var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
-    if (direction < -2 || currentMargin < -90) {
+    var direction = 0;
+    if (dragHistory.length >= 3) {
+      direction = dragHistory[dragHistory.length - 1] - dragHistory[0];
+    }
+    if (direction < -5) {
       collapseSidebar();
-    } else {
+    } else if (direction > 5) {
       expandSidebar();
+    } else {
+      var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
+      if (currentMargin < -90) collapseSidebar();
+      else expandSidebar();
     }
     sidebar.style.marginLeft = '';
     sidebar.style.opacity = '';
