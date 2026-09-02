@@ -14,7 +14,7 @@ html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-syste
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
 #sidebar{width:180px;min-width:180px;background:#fdf1e5;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
-#collapseHandle{width:6px;cursor:ew-resize;flex-shrink:0;touch-action:none;user-select:none;display:flex;gap:2px;background:#fce5cd;padding:0 0 0 0;pointer-events:none}
+#collapseHandle{width:6px;cursor:ew-resize;flex-shrink:0;touch-action:none;user-select:none;display:flex;gap:2px;background:#fce5cd;padding:0 0 0 0}
 #collapseHandle .red{flex:1;background:#ffa5a5}
 
 #sidebarHeader{padding:3px 2px 2px;border-bottom:1px solid #d1d5da;background:#fdf1e5;touch-action:pan-y}
@@ -900,6 +900,7 @@ function initSidebarSwipe() {
   }
   sidebar.addEventListener('pointerdown', startSwipe);
   swipeZone.addEventListener('pointerdown', startSwipe);
+  document.getElementById('collapseHandle').addEventListener('pointerdown', startSwipe);
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
