@@ -933,7 +933,7 @@ function initSidebarSwipe() {
       if (dt > 0) velocity = (newest.x - oldest.x) / dt;
     }
     var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
-    var target = velocity < -0.15 || currentMargin < -90 ? -180 : 0;
+    var target = velocity < 0 || currentMargin < -90 ? -180 : 0;
     animateSwipe(currentMargin, target, velocity);
   });
 }
@@ -950,7 +950,7 @@ function animateSwipe(from, to, velocity) {
     else expandSidebar();
     return;
   }
-  var speed = Math.max(Math.abs(velocity) * 1000, 400);
+  var speed = Math.max(Math.abs(velocity) * 1000, 200);
   var duration = (distance / speed) * 1000;
   var startTime = null;
   function step(timestamp) {
