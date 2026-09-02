@@ -932,7 +932,8 @@ function initSidebarSwipe() {
       var dt = newest.t - oldest.t;
       if (dt > 0) velocity = (newest.x - oldest.x) / dt;
     }
-    var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
+    var currentMargin = parseInt(sidebar.style.marginLeft);
+    if (isNaN(currentMargin)) currentMargin = sidebar.classList.contains('collapsed') ? -180 : 0;
     var target = velocity < 0 || currentMargin < -90 ? -180 : 0;
     animateSwipe(currentMargin, target, velocity);
   });
