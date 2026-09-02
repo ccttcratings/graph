@@ -950,7 +950,7 @@ function animateSwipe(from, to, velocity) {
     else expandSidebar();
     return;
   }
-  var speed = Math.max(Math.abs(velocity) * 1000, 200);
+  var speed = Math.abs(velocity) * 1000 || 300;
   var duration = (distance / speed) * 1000;
   var startTime = null;
   function step(timestamp) {
