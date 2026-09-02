@@ -926,6 +926,7 @@ function initSidebarSwipe() {
     if (!sidebarDrag.active) return;
     sidebarDrag.active = false;
     swipeZone.classList.remove('dragging');
+    sidebar.style.transition = '';
     var velocity = 0;
     if (dragHistory.length >= 3) {
       var oldest = dragHistory[0];
@@ -934,45 +935,39 @@ function initSidebarSwipe() {
       if (dt > 0) velocity = (newest.x - oldest.x) / dt;
     }
     var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
-    var target = velocity < 0 || currentMargin < -90 ? -180 : 0;
-    animateSwipe(currentMargin, target, velocity);
+    var goingLeft = velocity < 0 || currentMargin < -90;
+    var target = goingLeft ? -180 : 0;
+    var distance = Math.abs(target - currentMargin);
+    if (distance < 1) {
+      sidebar.style.marginLeft = '';
+      sidebar.style.opacity = '';
+      if (goingLeft) collapseSidebar();
+      else expandSidebar();
+      return;
+    }
+    var speed = Math.abs(velocity) * 1000;
+    var duration = speed > 1 ? (distance / speed) * 1000 : Math.max(distance * 2, 80);
+    var startTime = null;
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = currentMargin + (target - currentMargin) * eased;
+      sidebar.style.marginLeft = current + 'px';
+      sidebar.style.opacity = 1 + (current / 180);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        sidebar.style.marginLeft = '';
+        sidebar.style.opacity = '';
+        if (goingLeft) collapseSidebar();
+        else expandSidebar();
+      }
+    }
+    requestAnimationFrame(step);
   });
 }
 
-function animateSwipe(from, to, velocity) {
-  var sidebar = document.getElementById('sidebar');
-  var swipeZone = document.getElementById('swipeZone');
-  var distance = Math.abs(to - from);
-  if (distance < 1) {
-    sidebar.style.transition = '';
-    sidebar.style.marginLeft = '';
-    sidebar.style.opacity = '';
-    if (to === -180) collapseSidebar();
-    else expandSidebar();
-    return;
-  }
-  var speed = Math.abs(velocity) * 1000;
-  var duration = speed > 1 ? (distance / speed) * 1000 : Math.max(distance * 2, 80);
-  var startTime = null;
-  function step(timestamp) {
-    if (!startTime) startTime = timestamp;
-    var progress = Math.min((timestamp - startTime) / duration, 1);
-    var eased = 1 - Math.pow(1 - progress, 3);
-    var current = from + (to - from) * eased;
-    sidebar.style.marginLeft = current + 'px';
-    sidebar.style.opacity = 1 + (current / 180);
-    if (progress < 1) {
-      requestAnimationFrame(step);
-    } else {
-      sidebar.style.transition = '';
-      sidebar.style.marginLeft = '';
-      sidebar.style.opacity = '';
-      if (to === -180) collapseSidebar();
-      else expandSidebar();
-    }
-  }
-  requestAnimationFrame(step);
-}
 
 function collapseSidebar() {
   document.getElementById('sidebar').classList.add('collapsed');
