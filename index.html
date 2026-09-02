@@ -896,6 +896,8 @@ function initSidebarSwipe() {
     if (evt.button && evt.button !== 0) return;
     sidebarDrag.active = true;
     sidebarDrag.startX = evt.clientX;
+    sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
+    sidebar.style.transition = 'none';
     swipeZone.classList.add('dragging');
   }
   sidebar.addEventListener('pointerdown', startSwipe);
@@ -905,25 +907,29 @@ function initSidebarSwipe() {
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
-    if (sidebar.classList.contains('collapsed')) {
-      if (dx > 60) {
-        sidebarDrag.active = false;
-        swipeZone.classList.remove('dragging');
-        expandSidebar();
-      }
+    if (sidebarDrag.wasCollapsed) {
+      var newMargin = Math.min(0, Math.max(-180, -180 + dx));
+      sidebar.style.marginLeft = newMargin + 'px';
+      sidebar.style.opacity = 1 + (newMargin / 180);
     } else {
-      if (dx < -60) {
-        sidebarDrag.active = false;
-        swipeZone.classList.remove('dragging');
-        collapseSidebar();
-      }
+      var newMargin = Math.min(0, Math.max(-180, dx));
+      sidebar.style.marginLeft = newMargin + 'px';
+      sidebar.style.opacity = 1 + (newMargin / 180);
     }
   });
   document.addEventListener('pointerup', function(evt) {
-    if (sidebarDrag.active) {
-      sidebarDrag.active = false;
-      swipeZone.classList.remove('dragging');
+    if (!sidebarDrag.active) return;
+    sidebarDrag.active = false;
+    swipeZone.classList.remove('dragging');
+    sidebar.style.transition = '';
+    var currentMargin = parseInt(sidebar.style.marginLeft) || 0;
+    if (currentMargin < -90) {
+      collapseSidebar();
+    } else {
+      expandSidebar();
     }
+    sidebar.style.marginLeft = '';
+    sidebar.style.opacity = '';
   });
 }
 
