@@ -177,7 +177,6 @@ function followTooltip() {
   var offscreen = el.x < area.left - 20 || el.x > area.right + 20 || el.y < area.top - 20 || el.y > area.bottom + 20;
   if (offscreen) {
     chart.tooltip.setActiveElements([]);
-    state.active = null;
     return;
   }
   chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
@@ -190,8 +189,23 @@ function applyView(skipCrop) {
   chart.options.scales.x.max = view.max;
   if (!skipCrop) cropAxis();
   chart.update('none');
-  if (!skipCrop) { followTooltip(); if (state.active) chart.update('none'); }
-  updateScrollThumb();
+  if (!skipCrop) {
+    if (state.active) {
+      var meta = chart.getDatasetMeta(state.active.di);
+      if (meta && meta.data[state.active.idx]) {
+        var el = meta.data[state.active.idx];
+        var area = chart.chartArea;
+        var onscreen = el.x >= area.left && el.x <= area.right && el.y >= area.top && el.y <= area.bottom;
+        if (onscreen) {
+          chart.tooltip.setActiveElements([{ datasetIndex: state.active.di, index: state.active.idx }], { x: el.x, y: el.y });
+          chart.update('none');
+        } else {
+          chart.tooltip.setActiveElements([]);
+        }
+      }
+    }
+    updateScrollThumb();
+  }
 }
 
 function updateScrollThumb() {
@@ -309,8 +323,6 @@ function pointerDown(evt) {
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     pinchState.startDist = Math.sqrt(dx * dx + dy * dy);
-    state.active = null;
-    if (state.chart) state.chart.tooltip.setActiveElements([]);
   } else if (count === 1) {
     panState.active = true;
     panState.startX = evt.clientX;
