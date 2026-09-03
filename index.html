@@ -108,7 +108,7 @@ var DRAG_TOL = 8;
 var DEFAULT_RADIUS = 2;
 var MIN_SPAN = 86400000 * 3;
 var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
-var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false, dragHistory: [], momentumVx: 0, animating: false };
+var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false, dragHistory: [], momentumVx: 0, animating: false, currentVx: 0 };
 var pinchState = { active: false, startDist: 0, startMin: 0, startMax: 0 };
 var thumbDrag = { active: false, startX: 0, startMin: 0, startMax: 0 };
 
@@ -152,11 +152,6 @@ function onCanvasClick(evt) {
     if (lineDist < bestLineDist) { bestLineDist = lineDist; bestDi = di; bestIdx = nodeIdx; }
   }
   if (bestDi === -1 || bestLineDist > CLICK_TOL * CLICK_TOL) {
-    if (state.active) {
-      state.active = null;
-      chart.tooltip.setActiveElements([]);
-      chart.update();
-    }
     return;
   }
   state.active = { di: bestDi, idx: bestIdx };
@@ -268,16 +263,24 @@ function startPanMomentum(initialVelocity) {
   panState.animating = true;
   var lastTime = Date.now();
   var friction = 0.992;
+  var bounceDecay = 0.7;
   function step() {
     if (!panState.animating) return;
     var now = Date.now();
     var elapsed = now - lastTime;
     lastTime = now;
     vx *= Math.pow(friction, elapsed / 16);
-    if (Math.abs(vx) < 0.01) { panState.animating = false; return; }
+    panState.currentVx = vx;
+    if (Math.abs(vx) < 0.01) { panState.animating = false; panState.currentVx = 0; applyView(); return; }
+    var prevMin = view.min, prevMax = view.max;
     view.min += vx * elapsed;
     view.max += vx * elapsed;
     clampView();
+    if (view.min !== prevMin || view.max !== prevMax) {
+      if (Math.abs(prevMin - view.min) > 0.01 || Math.abs(prevMax - view.max) > 0.01) {
+        vx = -vx * bounceDecay;
+      }
+    }
     applyView();
     requestAnimationFrame(step);
   }
@@ -754,10 +757,10 @@ function buildChart() {
         return state.active && ctx.datasetIndex === state.active.di ? 4 : 1.5;
       },
       pointRadius: function(ctx) {
-        if (panState.animating) return 0;
+        if (panState.animating && Math.abs(panState.currentVx) > 0.05) return 0;
         return state.active && ctx.datasetIndex === state.active.di && ctx.dataIndex === state.active.idx ? 7 : DEFAULT_RADIUS;
       },
-      pointHitRadius: function() { return panState.animating ? 0 : 10; },
+      pointHitRadius: function() { return panState.animating && Math.abs(panState.currentVx) > 0.05 ? 0 : 10; },
       pointHoverRadius: 5,
       pointHoverBorderWidth: 2,
       tension: 0.05,
