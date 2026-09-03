@@ -267,7 +267,7 @@ function startPanMomentum(initialVelocity) {
   var vx = -initialVelocity / pxPerMs;
   panState.animating = true;
   var lastTime = Date.now();
-  var friction = 0.985;
+  var friction = 0.992;
   function step() {
     if (!panState.animating) return;
     var now = Date.now();
