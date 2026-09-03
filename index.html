@@ -98,6 +98,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 <script>
 var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX7guKy-_ONzc6nuCWGLu2UmfLRb5CvD60e8s035PNeGNqz5L2_NtZ00fbmq0eb8HOhgSryIpbVYz-/pub?gid=795365907&single=true&output=csv';
 var LS_KEY = 'ttRatingsGraphHidden_v2';
+var CSV_CACHE_KEY = 'ttRatingsGraphCSV';
 var FADE_START = 30;
 var FADE_END = 141;
 var HIDE_DAY = 142;
@@ -775,12 +776,28 @@ function updateChart() {
   applyView();
 }
 
-function init() {
-  var hadChoice = loadHidden();
+function isUpdateWindow() {
+  var now = new Date();
+  return now.getDay() === 0 && (now.getHours() === 0 || now.getHours() === 12 || now.getHours() === 23);
+}
+
+function fetchCSV(callback) {
+  if (!isUpdateWindow()) {
+    var cached = localStorage.getItem(CSV_CACHE_KEY);
+    if (cached) { callback(cached); return; }
+  }
   fetch(CSV_URL)
     .then(function(r) { return r.text(); })
     .then(function(csv) {
-      var data = parseCSV(csv);
+      if (isUpdateWindow()) localStorage.setItem(CSV_CACHE_KEY, csv);
+      callback(csv);
+    });
+}
+
+function init() {
+  var hadChoice = loadHidden();
+  fetchCSV(function(csv) {
+    var data = parseCSV(csv);
       var activeRoster = [];
       var activeSeries = {};
       var now = Date.now();
@@ -840,12 +857,11 @@ function init() {
       canvas.addEventListener('pointerup', pointerUp);
       canvas.addEventListener('pointercancel', pointerCancel);
       canvas.addEventListener('lostpointercapture', pointerCancel);
-    })
-    .catch(function(err) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error').textContent = 'Failed to load data: ' + err.message;
-    });
+  }).catch(function(err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Failed to load data: ' + err.message;
+  });
 }
 
 document.getElementById('showAll').addEventListener('click', function() {
@@ -887,7 +903,7 @@ function updateSwipeZone() {
   if (zone && yScale) zone.style.width = yScale.right + 'px';
 }
 
-var sidebarDrag = { active: false, startX: 0 };
+var sidebarDrag = { active: false, startX: 0, animating: false };
 
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
@@ -948,6 +964,8 @@ function initSidebarSwipe() {
     var speed = Math.abs(velocity) * 1000;
     var duration = speed > 1 ? (distance / speed) * 1000 : Math.max(distance * 2, 80);
     var startTime = null;
+    sidebarDrag.animating = true;
+    var frameCount = 0;
     function step(timestamp) {
       if (!startTime) startTime = timestamp;
       var progress = Math.min((timestamp - startTime) / duration, 1);
@@ -955,11 +973,14 @@ function initSidebarSwipe() {
       var current = currentMargin + (target - currentMargin) * eased;
       sidebar.style.marginLeft = current + 'px';
       sidebar.style.opacity = 1 + (current / 180);
+      frameCount++;
       if (progress < 1) {
+        if (frameCount % 10 === 0 && state.chart) { state.chart.resize(); updateSwipeZone(); }
         requestAnimationFrame(step);
       } else {
         sidebar.style.marginLeft = '';
         sidebar.style.opacity = '';
+        sidebarDrag.animating = false;
         if (goingLeft) collapseSidebar();
         else expandSidebar();
       }
