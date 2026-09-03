@@ -42,7 +42,7 @@ html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-syste
 .swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
 .pname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-row.active .pname{font-weight:800}
-#chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:hidden;position:relative;touch-action:none}
+#chartWrap{flex:1;background:#fce5cd;display:flex;flex-direction:column;overflow:visible;position:relative;touch-action:none}
 #chartBox{position:relative;width:100%;flex:1;padding:2px;overflow:hidden;touch-action:none}
 canvas{width:100%!important;height:100%!important;touch-action:none}
 #scrollbar{position:relative;height:24px;background:#d1d5da;border-top:1px solid #c0c4c8;flex-shrink:0;cursor:pointer}
@@ -54,7 +54,7 @@ canvas{width:100%!important;height:100%!important;touch-action:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 #error{display:none;background:#ffa5a5;color:#1b1f23;padding:12px 20px;text-align:center;font-size:14px}
 #zoomHint{position:absolute;bottom:32px;left:60px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
-#topHint{position:absolute;top:4px;left:14px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
+#topHint{position:absolute;top:-14px;left:14px;font-size:11px;color:#6a737d;pointer-events:none;opacity:.7}
 #swipeZone{position:absolute;top:0;left:0;width:60px;height:100%;z-index:5;touch-action:pan-y;cursor:grab;user-select:none}
 #swipeZone.dragging{cursor:grabbing}
 
