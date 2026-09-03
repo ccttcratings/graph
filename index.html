@@ -1022,6 +1022,7 @@ function initSidebarSwipe() {
     var duration = speed > 1 ? (distance / speed) * 1000 : Math.max(distance * 2, 80);
     var startTime = null;
     sidebarDrag.animating = true;
+    panState.animating = true;
     var frameCount = 0;
     function step(timestamp) {
       if (!startTime) startTime = timestamp;
@@ -1032,12 +1033,13 @@ function initSidebarSwipe() {
       sidebar.style.opacity = 1 + (current / 180);
       frameCount++;
       if (progress < 1) {
-        if (frameCount % 10 === 0 && state.chart) { state.chart.resize(); updateSwipeZone(); }
+        if (state.chart) { state.chart.resize(); updateSwipeZone(); }
         requestAnimationFrame(step);
       } else {
         sidebar.style.marginLeft = '';
         sidebar.style.opacity = '';
         sidebarDrag.animating = false;
+        panState.animating = false;
         if (goingLeft) collapseSidebar();
         else expandSidebar();
       }
