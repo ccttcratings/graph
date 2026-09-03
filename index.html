@@ -264,10 +264,10 @@ function startPanMomentum(initialVelocity) {
   if (!chart) return;
   var area = chart.chartArea;
   var pxPerMs = (area.right - area.left) / (view.max - view.min);
-  var vx = initialVelocity / pxPerMs;
+  var vx = -initialVelocity / pxPerMs;
   panState.animating = true;
   var lastTime = Date.now();
-  var friction = 0.95;
+  var friction = 0.985;
   function step() {
     if (!panState.animating) return;
     var now = Date.now();
