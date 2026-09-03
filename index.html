@@ -895,7 +895,7 @@ function init() {
       view.dataMin = Math.min.apply(null, allDates);
       view.dataMax = Math.max.apply(null, allDates);
       var span = view.dataMax - view.dataMin;
-      view.min = view.dataMax - span * 0.3;
+      view.min = view.dataMin;
       view.max = view.dataMax;
 
       document.getElementById('loading').style.display = 'none';
