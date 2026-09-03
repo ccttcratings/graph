@@ -694,8 +694,8 @@ var customXAxis = {
       ctx.stroke();
     });
     if (state.saturdayDates && state.saturdayDates.length) {
-      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 0.5;
       state.saturdayDates.forEach(function(d) {
         var x = xScale.getPixelForValue(d.getTime());
         if (x < area.left || x > area.right) return;
@@ -847,13 +847,13 @@ function buildChart() {
         x: {
           type: 'time',
           time: { unit: 'month' },
-          grid: { color: 'rgba(0,0,0,0.2)', lineWidth: 1.5 },
+          grid: { color: 'rgba(0,0,0,0.3)', lineWidth: 2 },
           border: { display: false },
           ticks: { display: false }
         },
         y: {
           type: 'linear',
-          grid: { color: 'rgba(0,0,0,0.2)', lineWidth: 1.5 },
+          grid: { color: 'rgba(0,0,0,0.3)', lineWidth: 2 },
           border: { display: false },
           ticks: { font: { weight: 'bold' }, padding: 2, color: '#000' },
           title: { display: false },
