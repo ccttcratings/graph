@@ -523,6 +523,7 @@ function parseCSV(text) {
   var lines = text.split('\n');
   var series = {};
   var playerDates = {};
+  var allDates = {};
   for (var i = 1; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line) continue;
@@ -535,7 +536,15 @@ function parseCSV(text) {
     if (!series[player]) { series[player] = []; playerDates[player] = date; }
     series[player].push([date, rating]);
     if (date > playerDates[player]) playerDates[player] = date;
+    var key = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+    allDates[key] = date;
   }
+  var saturdayDates = [];
+  for (var k in allDates) {
+    var d = allDates[k];
+    if (d.getDay() === 6) saturdayDates.push(d);
+  }
+  saturdayDates.sort(function(a, b) { return a.getTime() - b.getTime(); });
   for (var p in series) {
     series[p].sort(function(a, b) { return a[0].getTime() - b[0].getTime(); });
   }
@@ -547,7 +556,7 @@ function parseCSV(text) {
   var roster = Object.keys(series).sort(function(a, b) {
     return lastRating[b] - lastRating[a];
   });
-  return { roster: roster, series: series, lastDates: playerDates };
+  return { roster: roster, series: series, lastDates: playerDates, saturdayDates: saturdayDates };
 }
 
 var state = {
@@ -556,7 +565,8 @@ var state = {
   active: null,
   roster: [],
   series: {},
-  colors: {}
+  colors: {},
+  saturdayDates: []
 };
 
 function loadHidden() {
@@ -671,6 +681,18 @@ var customXAxis = {
       ctx.lineTo(x, area.bottom);
       ctx.stroke();
     });
+    if (state.saturdayDates && state.saturdayDates.length) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.lineWidth = 1;
+      state.saturdayDates.forEach(function(d) {
+        var x = xScale.getPixelForValue(d.getTime());
+        if (x < area.left || x > area.right) return;
+        ctx.beginPath();
+        ctx.moveTo(x, area.top);
+        ctx.lineTo(x, area.bottom);
+        ctx.stroke();
+      });
+    }
     ctx.restore();
   },
   afterDatasetsDraw: function(chart) {
@@ -813,13 +835,13 @@ function buildChart() {
         x: {
           type: 'time',
           time: { unit: 'month' },
-          grid: { color: 'rgba(0,0,0,0.08)' },
+          grid: { color: 'rgba(0,0,0,0.2)', lineWidth: 1.5 },
           border: { display: false },
           ticks: { display: false }
         },
         y: {
           type: 'linear',
-          grid: { color: 'rgba(0,0,0,0.08)' },
+          grid: { color: 'rgba(0,0,0,0.2)', lineWidth: 1.5 },
           border: { display: false },
           ticks: { font: { weight: 'bold' }, padding: 2, color: '#000' },
           title: { display: false },
@@ -878,6 +900,7 @@ function init() {
       });
       state.roster = activeRoster;
       state.series = activeSeries;
+      state.saturdayDates = data.saturdayDates || [];
       state.colors = {};
       state.roster.forEach(function(name, i) { state.colors[name] = graphColor(i); });
       state.roster.forEach(function(name) {
