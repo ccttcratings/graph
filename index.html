@@ -152,6 +152,11 @@ function onCanvasClick(evt) {
     if (lineDist < bestLineDist) { bestLineDist = lineDist; bestDi = di; bestIdx = nodeIdx; }
   }
   if (bestDi === -1 || bestLineDist > CLICK_TOL * CLICK_TOL) {
+    if (state.active) {
+      state.active = null;
+      chart.tooltip.setActiveElements([]);
+      chart.update();
+    }
     return;
   }
   state.active = { di: bestDi, idx: bestIdx };
