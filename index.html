@@ -276,7 +276,7 @@ function startPanMomentum(initialVelocity) {
   var vx = -initialVelocity / pxPerMs;
   panState.animating = true;
   var lastTime = Date.now();
-  var friction = 0.992;
+  var friction = 0.996;
   var bounceDecay = 0.7;
   var wasAtWall = false;
   var pxVx = initialVelocity;
