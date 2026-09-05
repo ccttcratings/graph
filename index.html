@@ -104,6 +104,7 @@ var FADE_END = 141;
 var HIDE_DAY = 142;
 var GOLDEN_ANGLE = 137.508;
 var CLICK_TOL = 8;
+function haptic() { if (navigator.vibrate) navigator.vibrate(50); }
 var DRAG_TOL = 8;
 var DEFAULT_RADIUS = 2;
 var MIN_SPAN = 86400000 * 3;
@@ -160,6 +161,7 @@ function onCanvasClick(evt) {
     return;
   }
   state.active = { di: bestDi, idx: bestIdx };
+  haptic();
   chart.tooltip.setActiveElements([{ datasetIndex: bestDi, index: bestIdx }], { x: clickX, y: clickY });
   chart.update();
 }
@@ -652,6 +654,7 @@ function buildSidebar() {
     row.appendChild(swatch);
     row.appendChild(pname);
     row.addEventListener('click', function() {
+      haptic();
       state.hidden[name] = !state.hidden[name];
       saveHidden();
       updateChart();
@@ -990,6 +993,7 @@ function resetZoom() {
 }
 
 document.getElementById('showAll').addEventListener('click', function() {
+  haptic();
   state.hidden = {};
   saveHidden();
   resetZoom();
@@ -998,6 +1002,7 @@ document.getElementById('showAll').addEventListener('click', function() {
 });
 
 document.getElementById('hideAll').addEventListener('click', function() {
+  haptic();
   state.roster.forEach(function(n) { state.hidden[n] = true; });
   saveHidden();
   resetZoom();
@@ -1006,6 +1011,7 @@ document.getElementById('hideAll').addEventListener('click', function() {
 });
 
 document.getElementById('hideInactive').addEventListener('click', function() {
+  haptic();
   state.hidden = {};
   state.roster.forEach(function(n) {
     if (!isPlayerActive(n)) state.hidden[n] = true;
