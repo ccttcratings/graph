@@ -109,7 +109,7 @@ var DEFAULT_RADIUS = 2;
 var MIN_SPAN = 86400000 * 3;
 var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
 var panState = { active: false, startX: 0, startMin: 0, startMax: 0, didDrag: false, dragHistory: [], momentumVx: 0, animating: false, currentVx: 0, currentPxVx: 0 };
-var pinchState = { active: false, startDist: 0, startMin: 0, startMax: 0 };
+var pinchState = { active: false, startDist: 0, startMin: 0, startMax: 0, startCenterY: 0, pageScroll: 0, isVertical: false };
 var thumbDrag = { active: false, startX: 0, startMin: 0, startMax: 0 };
 
 function distToSegmentSq(px, py, ax, ay, bx, by) {
@@ -328,6 +328,9 @@ function pointerDown(evt) {
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     pinchState.startDist = Math.sqrt(dx * dx + dy * dy);
+    pinchState.startCenterY = (pointerState[ids[0]].y + pointerState[ids[1]].y) / 2;
+    pinchState.pageScroll = window.scrollY;
+    pinchState.isVertical = Math.abs(dy) > Math.abs(dx) * 2;
   } else if (count === 1) {
     panState.active = true;
     panState.startX = evt.clientX;
@@ -349,7 +352,13 @@ function pointerMove(evt) {
     var dx = pointerState[ids[0]].x - pointerState[ids[1]].x;
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     var dist = Math.sqrt(dx * dx + dy * dy);
-    if (pinchState.startDist > 0) {
+    var centerY = (pointerState[ids[0]].y + pointerState[ids[1]].y) / 2;
+    if (pinchState.isVertical) {
+      var scrollDelta = pinchState.startCenterY - centerY;
+      var maxScroll = 50;
+      scrollDelta = Math.max(-maxScroll, Math.min(maxScroll, scrollDelta));
+      window.scrollTo(0, pinchState.pageScroll + scrollDelta);
+    } else if (pinchState.startDist > 0) {
       var scale = Math.pow(pinchState.startDist / dist, 2.0);
       var span = (pinchState.startMax - pinchState.startMin) * scale;
       span = Math.max(MIN_SPAN, Math.min(view.dataMax - view.dataMin, span));
