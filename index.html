@@ -315,7 +315,6 @@ var pointerState = {};
 
 function pointerDown(evt) {
   if (evt.pointerType !== 'touch') return;
-  evt.preventDefault();
   state.chart.canvas.setPointerCapture(evt.pointerId);
   pointerState[evt.pointerId] = { x: evt.clientX, y: evt.clientY };
   var count = Object.keys(pointerState).length;
@@ -358,7 +357,9 @@ function pointerMove(evt) {
       var maxScroll = 50;
       scrollDelta = Math.max(-maxScroll, Math.min(maxScroll, scrollDelta));
       window.scrollTo(0, pinchState.pageScroll + scrollDelta);
-    } else if (pinchState.startDist > 0) {
+    } else {
+      evt.preventDefault();
+      if (pinchState.startDist > 0) {
       var scale = Math.pow(pinchState.startDist / dist, 2.0);
       var span = (pinchState.startMax - pinchState.startMin) * scale;
       span = Math.max(MIN_SPAN, Math.min(view.dataMax - view.dataMin, span));
