@@ -330,6 +330,9 @@ function pointerDown(evt) {
     pinchState.startCenterY = (pointerState[ids[0]].y + pointerState[ids[1]].y) / 2;
     pinchState.pageScroll = window.scrollY;
     pinchState.isVertical = Math.abs(dy) > Math.abs(dx) * 2;
+    if (pinchState.isVertical) {
+      state.chart.canvas.releasePointerCapture(evt.pointerId);
+    }
   } else if (count === 1) {
     panState.active = true;
     panState.startX = evt.clientX;
