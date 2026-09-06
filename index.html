@@ -669,6 +669,7 @@ function buildSidebar() {
     row.appendChild(pname);
     row.addEventListener('pointerdown', function(evt) {
       if (evt.button && evt.button !== 0) return;
+      evt.stopPropagation();
       sidebarGrabStart(evt.clientX);
     });
     row.addEventListener('click', function() {
