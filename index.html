@@ -1057,9 +1057,11 @@ function updateSwipeZone() {
 }
 
 var sidebarDrag = { active: false, startX: 0, animating: false };
+var sidebarDragHistory = [];
 
 function sidebarGrabStart(x) {
   var sidebar = document.getElementById('sidebar');
+  sidebarDragHistory = [{x: x, t: Date.now()}];
   if (sidebarDrag.animating) {
     sidebarDrag.animating = false;
     panState.animating = false;
@@ -1084,7 +1086,6 @@ function sidebarGrabStart(x) {
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
-  var dragHistory = [];
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
     sidebarGrabStart(evt.clientX);
@@ -1096,8 +1097,8 @@ function initSidebarSwipe() {
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
-    dragHistory.push({x: evt.clientX, t: Date.now()});
-    if (dragHistory.length > 10) dragHistory.shift();
+    sidebarDragHistory.push({x: evt.clientX, t: Date.now()});
+    if (sidebarDragHistory.length > 10) sidebarDragHistory.shift();
     if (sidebarDrag.wasCollapsed) {
       var newMargin = Math.min(0, Math.max(-180, sidebarDrag.startMargin + dx));
       sidebar.style.marginLeft = newMargin + 'px';
@@ -1114,9 +1115,9 @@ function initSidebarSwipe() {
     swipeZone.classList.remove('dragging');
     sidebar.style.transition = '';
     var velocity = 0;
-    if (dragHistory.length >= 3) {
-      var oldest = dragHistory[0];
-      var newest = dragHistory[dragHistory.length - 1];
+    if (sidebarDragHistory.length >= 3) {
+      var oldest = sidebarDragHistory[0];
+      var newest = sidebarDragHistory[sidebarDragHistory.length - 1];
       var dt = newest.t - oldest.t;
       if (dt > 0) velocity = (newest.x - oldest.x) / dt;
     }
