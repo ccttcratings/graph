@@ -668,6 +668,8 @@ function buildSidebar() {
     row.appendChild(pname);
     row.addEventListener('click', function() {
       pongSound();
+      sidebarDrag.animating = false;
+      panState.animating = false;
       state.hidden[name] = !state.hidden[name];
       saveHidden();
       updateChart();
