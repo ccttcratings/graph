@@ -109,7 +109,9 @@ var GOLDEN_ANGLE = 137.508;
 var CLICK_TOL = 8;
 var DRAG_TOL = 8;
 var _audioCtx;
+var _lastOsc = null;
 function initAudio() {
+  if (_audioCtx) return;
   try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
 }
 function playTone(freq, endFreq, dur) {
@@ -117,6 +119,7 @@ function playTone(freq, endFreq, dur) {
   if (!_audioCtx) return;
   try {
     if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    if (_lastOsc) { try { _lastOsc.stop(); } catch(e) {} _lastOsc = null; }
     var t = _audioCtx.currentTime;
     var osc = _audioCtx.createOscillator();
     var gain = _audioCtx.createGain();
@@ -125,10 +128,11 @@ function playTone(freq, endFreq, dur) {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, t);
     osc.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
-    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.setValueAtTime(0.3, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
     osc.start(t);
-    osc.stop(t + dur);
+    osc.stop(t + dur + 0.01);
+    _lastOsc = osc;
   } catch(e) {}
 }
 function pongSound() { playTone(400, 150, 0.07); }
