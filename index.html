@@ -382,7 +382,9 @@ function pointerMove(evt) {
     var dy = pointerState[ids[0]].y - pointerState[ids[1]].y;
     var dist = Math.sqrt(dx * dx + dy * dy);
     if (pinchState.startDist > 0) {
-      var scale = Math.pow(pinchState.startDist / dist, 3.0);
+      var ratio = pinchState.startDist / dist;
+      var exp = ratio > 1 ? 6.0 : 3.0;
+      var scale = Math.pow(ratio, exp);
       var span = (pinchState.startMax - pinchState.startMin) * scale;
       span = Math.max(MIN_SPAN, Math.min(view.dataMax - view.dataMin, span));
       var center = (pinchState.startMin + pinchState.startMax) / 2;
