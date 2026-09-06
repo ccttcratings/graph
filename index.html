@@ -1137,6 +1137,7 @@ function initSidebarSwipe() {
     var startTime = null;
     sidebarDrag.animating = true;
     panState.animating = true;
+    if (!goingLeft) sidebar.style.pointerEvents = 'auto';
     var frameCount = 0;
     function step(timestamp) {
       if (!sidebarDrag.animating) return;
@@ -1155,6 +1156,7 @@ function initSidebarSwipe() {
         sidebar.style.opacity = '';
         sidebarDrag.animating = false;
         panState.animating = false;
+        sidebar.style.pointerEvents = '';
         if (goingLeft) collapseSidebar();
         else expandSidebar();
       }
