@@ -1081,9 +1081,9 @@ function sidebarGrabStart(x) {
     return;
   }
   sidebarDrag.active = true;
-  sidebarDrag.startX = x;
   sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
-  sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : 0;
+  sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : (parseInt(sidebar.style.marginLeft) || 0);
+  sidebarDrag.startX = x;
   if (sidebarDrag.wasCollapsed) sidebar.style.marginLeft = '-180px';
   sidebar.style.transition = 'none';
   document.getElementById('swipeZone').classList.add('dragging');
