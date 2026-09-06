@@ -1068,24 +1068,26 @@ function sidebarGrabStart(x) {
   var sidebar = document.getElementById('sidebar');
   sidebarDragHistory = [{x: x, t: Date.now()}];
   sidebarDrag.firstMove = true;
+  var curMargin = parseFloat(getComputedStyle(sidebar).marginLeft) || 0;
   if (sidebarDrag.animating) {
     sidebarDrag.animating = false;
     panState.animating = false;
     sidebar.style.transition = 'none';
-    var curMargin = parseInt(sidebar.style.marginLeft) || 0;
     sidebarDrag.active = true;
     sidebarDrag.startX = x;
     sidebarDrag.wasCollapsed = curMargin < -90;
     sidebarDrag.startMargin = curMargin;
+    sidebar.style.marginLeft = curMargin + 'px';
     document.getElementById('swipeZone').classList.add('dragging');
     return;
   }
   sidebarDrag.active = true;
   sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
-  sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : (parseInt(sidebar.style.marginLeft) || 0);
+  sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : curMargin;
   sidebarDrag.startX = x;
-  if (sidebarDrag.wasCollapsed) sidebar.style.marginLeft = '-180px';
   sidebar.style.transition = 'none';
+  if (sidebarDrag.wasCollapsed) sidebar.style.marginLeft = '-180px';
+  else sidebar.style.marginLeft = curMargin + 'px';
   document.getElementById('swipeZone').classList.add('dragging');
 }
 
