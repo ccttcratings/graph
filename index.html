@@ -111,15 +111,22 @@ var DRAG_TOL = 8;
 var _audioCtx;
 var _lastOsc = null;
 function initAudio() {
+  if (_audioCtx) return;
   try {
     _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var silent = _audioCtx.createOscillator();
+    var sg = _audioCtx.createGain();
+    sg.gain.value = 0;
+    silent.connect(sg);
+    sg.connect(_audioCtx.destination);
+    silent.start();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
   } catch(e) {}
 }
 function playTone(freq, endFreq, dur) {
   if (!_audioCtx) initAudio();
   if (!_audioCtx) return;
   try {
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
     if (_lastOsc) { try { _lastOsc.stop(); } catch(e) {} _lastOsc = null; }
     var t = _audioCtx.currentTime;
     var osc = _audioCtx.createOscillator();
