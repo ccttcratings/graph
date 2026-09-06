@@ -1007,6 +1007,7 @@ function resetZoom() {
 }
 
 document.getElementById('showAll').addEventListener('click', function() {
+  if (sidebarDrag.animating || document.getElementById('sidebar').classList.contains('collapsed')) return;
   state.hidden = {};
   saveHidden();
   resetZoom();
@@ -1015,6 +1016,7 @@ document.getElementById('showAll').addEventListener('click', function() {
 });
 
 document.getElementById('hideAll').addEventListener('click', function() {
+  if (sidebarDrag.animating || document.getElementById('sidebar').classList.contains('collapsed')) return;
   state.roster.forEach(function(n) { state.hidden[n] = true; });
   saveHidden();
   resetZoom();
@@ -1023,6 +1025,7 @@ document.getElementById('hideAll').addEventListener('click', function() {
 });
 
 document.getElementById('hideInactive').addEventListener('click', function() {
+  if (sidebarDrag.animating || document.getElementById('sidebar').classList.contains('collapsed')) return;
   state.hidden = {};
   state.roster.forEach(function(n) {
     if (!isPlayerActive(n)) state.hidden[n] = true;
