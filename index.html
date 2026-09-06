@@ -12,7 +12,7 @@
 html,body{height:100%;overflow:hidden;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#f7f8fa;color:#1b1f23}
 #app{display:flex;flex-direction:column;height:100vh;touch-action:none}
 #body{display:flex;flex:1;overflow:hidden;touch-action:none}
-#sidebar{width:180px;min-width:180px;background:#fdf1e5;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative;cursor:grab}
+#sidebar{width:180px;min-width:180px;background:#fdf1e5;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .25s ease,opacity .25s ease;position:relative}
 #sidebar.collapsed{margin-left:-180px;opacity:0;pointer-events:none}
 #collapseHandle{width:6px;cursor:grab;flex-shrink:0;touch-action:none;user-select:none;display:flex;gap:2px;background:#fce5cd;padding:0 0 0 0}
 #collapseHandle .red{flex:1;background:#ffa5a5}
@@ -1060,7 +1060,6 @@ function initSidebarSwipe() {
   var dragHistory = [];
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
-    if (evt.target.closest('.player-row')) return;
     if (sidebarDrag.animating) {
       sidebarDrag.animating = false;
       panState.animating = false;
