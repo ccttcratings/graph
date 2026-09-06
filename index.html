@@ -124,8 +124,8 @@ function unlockAudio() {
     osc.stop(0.1);
   } catch(e) {}
 }
-window.addEventListener('click', unlockAudio, { once: true });
-window.addEventListener('touchstart', unlockAudio, { once: true });
+window.addEventListener('click', unlockAudio, { once: true, capture: true });
+window.addEventListener('touchstart', unlockAudio, { once: true, capture: true });
 function playTone(freq, endFreq, dur) {
   var now = performance.now();
   if (now - _lastPlayTime < 80) return;
