@@ -667,9 +667,8 @@ function buildSidebar() {
     row.appendChild(swatch);
     row.appendChild(pname);
     row.addEventListener('click', function() {
+      if (sidebarDrag.animating || document.getElementById('sidebar').classList.contains('collapsed')) return;
       pongSound();
-      sidebarDrag.animating = false;
-      panState.animating = false;
       state.hidden[name] = !state.hidden[name];
       saveHidden();
       updateChart();
