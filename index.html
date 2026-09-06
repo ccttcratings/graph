@@ -1089,6 +1089,7 @@ function initSidebarSwipe() {
     sidebar.style.transition = 'none';
     swipeZone.classList.add('dragging');
   }
+  sidebar.addEventListener('pointerdown', startSwipe);
   swipeZone.addEventListener('pointerdown', startSwipe);
   document.getElementById('collapseHandle').addEventListener('pointerdown', startSwipe);
   document.getElementById('scrollTrack').addEventListener('pointerdown', startSwipe);
