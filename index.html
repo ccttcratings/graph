@@ -1059,6 +1059,7 @@ function initSidebarSwipe() {
   var dragHistory = [];
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
+    if (sidebarDrag.animating) return;
     sidebarDrag.active = true;
     sidebarDrag.startX = evt.clientX;
     sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
