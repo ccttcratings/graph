@@ -110,6 +110,7 @@ var CLICK_TOL = 8;
 var DRAG_TOL = 8;
 var _audioCtx;
 var _lastOsc = null;
+var _lastPlayTime = 0;
 function unlockAudio() {
   if (_audioCtx) return;
   try {
@@ -126,6 +127,9 @@ function unlockAudio() {
 window.addEventListener('click', unlockAudio, { once: true });
 window.addEventListener('touchstart', unlockAudio, { once: true });
 function playTone(freq, endFreq, dur) {
+  var now = performance.now();
+  if (now - _lastPlayTime < 80) return;
+  _lastPlayTime = now;
   if (!_audioCtx) unlockAudio();
   if (!_audioCtx) return;
   try {
@@ -138,7 +142,8 @@ function playTone(freq, endFreq, dur) {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, t);
     osc.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
-    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.002);
     gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
     osc.start(t);
     osc.stop(t + dur + 0.01);
