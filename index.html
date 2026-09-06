@@ -667,6 +667,10 @@ function buildSidebar() {
     if (fade) pname.style.color = fade;
     row.appendChild(swatch);
     row.appendChild(pname);
+    row.addEventListener('pointerdown', function(evt) {
+      if (evt.button && evt.button !== 0) return;
+      sidebarGrabStart(evt.clientX);
+    });
     row.addEventListener('click', function() {
       if (sidebarDrag.animating || document.getElementById('sidebar').classList.contains('collapsed')) return;
       pongSound();
@@ -1054,36 +1058,36 @@ function updateSwipeZone() {
 
 var sidebarDrag = { active: false, startX: 0, animating: false };
 
+function sidebarGrabStart(x) {
+  var sidebar = document.getElementById('sidebar');
+  if (sidebarDrag.animating) {
+    sidebarDrag.animating = false;
+    panState.animating = false;
+    sidebar.style.transition = 'none';
+    var curMargin = parseInt(sidebar.style.marginLeft) || 0;
+    sidebarDrag.active = true;
+    sidebarDrag.startX = x;
+    sidebarDrag.wasCollapsed = curMargin < -90;
+    sidebarDrag.startMargin = curMargin;
+    document.getElementById('swipeZone').classList.add('dragging');
+    return;
+  }
+  sidebarDrag.active = true;
+  sidebarDrag.startX = x;
+  sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
+  sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : 0;
+  if (sidebarDrag.wasCollapsed) sidebar.style.marginLeft = '-180px';
+  sidebar.style.transition = 'none';
+  document.getElementById('swipeZone').classList.add('dragging');
+}
+
 function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
   var dragHistory = [];
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
-    if (sidebarDrag.animating) {
-      sidebarDrag.animating = false;
-      panState.animating = false;
-      sidebar.style.transition = 'none';
-      var curMargin = parseInt(sidebar.style.marginLeft) || 0;
-      sidebarDrag.active = true;
-      sidebarDrag.startX = evt.clientX;
-      sidebarDrag.wasCollapsed = curMargin < -90;
-      sidebarDrag.startMargin = curMargin;
-      dragHistory = [{x: evt.clientX, t: Date.now()}];
-      swipeZone.classList.add('dragging');
-      return;
-    }
-    beginDrag(evt.clientX);
-  }
-  function beginDrag(x) {
-    sidebarDrag.active = true;
-    sidebarDrag.startX = x;
-    sidebarDrag.wasCollapsed = sidebar.classList.contains('collapsed');
-    sidebarDrag.startMargin = sidebarDrag.wasCollapsed ? -180 : 0;
-    if (sidebarDrag.wasCollapsed) sidebar.style.marginLeft = '-180px';
-    dragHistory = [{x: x, t: Date.now()}];
-    sidebar.style.transition = 'none';
-    swipeZone.classList.add('dragging');
+    sidebarGrabStart(evt.clientX);
   }
   sidebar.addEventListener('pointerdown', startSwipe);
   swipeZone.addEventListener('pointerdown', startSwipe);
