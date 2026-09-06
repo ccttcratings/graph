@@ -1125,6 +1125,7 @@ function initSidebarSwipe() {
     panState.animating = true;
     var frameCount = 0;
     function step(timestamp) {
+      if (!sidebarDrag.animating) return;
       if (!startTime) startTime = timestamp;
       var progress = Math.min((timestamp - startTime) / duration, 1);
       var eased = 1 - Math.pow(1 - progress, 3);
