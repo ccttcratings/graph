@@ -1058,6 +1058,10 @@ function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
   var dragHistory = [];
+  var WAIT_MS = 150;
+  var waitTimer = null;
+  var waiting = false;
+  var waitX = 0;
   function startSwipe(evt) {
     if (evt.button && evt.button !== 0) return;
     if (sidebarDrag.animating) {
@@ -1073,7 +1077,17 @@ function initSidebarSwipe() {
       swipeZone.classList.add('dragging');
       return;
     }
-    beginDrag(evt.clientX);
+    waiting = true;
+    waitX = evt.clientX;
+    waitTimer = setTimeout(function() {
+      if (waiting) {
+        waiting = false;
+        beginDrag(waitX);
+      }
+    }, WAIT_MS);
+  }
+  function cancelWait() {
+    if (waiting) { waiting = false; clearTimeout(waitTimer); }
   }
   function beginDrag(x) {
     sidebarDrag.active = true;
@@ -1090,6 +1104,10 @@ function initSidebarSwipe() {
   document.getElementById('collapseHandle').addEventListener('pointerdown', startSwipe);
   document.getElementById('scrollTrack').addEventListener('pointerdown', startSwipe);
   document.addEventListener('pointermove', function(evt) {
+    if (waiting) {
+      if (Math.abs(evt.clientX - waitX) > 5) cancelWait();
+      return;
+    }
     if (!sidebarDrag.active) return;
     var dx = evt.clientX - sidebarDrag.startX;
     dragHistory.push({x: evt.clientX, t: Date.now()});
@@ -1105,6 +1123,7 @@ function initSidebarSwipe() {
     }
   });
   document.addEventListener('pointerup', function(evt) {
+    cancelWait();
     if (!sidebarDrag.active) return;
     sidebarDrag.active = false;
     swipeZone.classList.remove('dragging');
