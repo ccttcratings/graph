@@ -1061,12 +1061,13 @@ function updateSwipeZone() {
   if (zone && yScale) zone.style.width = yScale.right + 'px';
 }
 
-var sidebarDrag = { active: false, startX: 0, animating: false };
+var sidebarDrag = { active: false, startX: 0, animating: false, firstMove: false };
 var sidebarDragHistory = [];
 
 function sidebarGrabStart(x) {
   var sidebar = document.getElementById('sidebar');
   sidebarDragHistory = [{x: x, t: Date.now()}];
+  sidebarDrag.firstMove = true;
   if (sidebarDrag.animating) {
     sidebarDrag.animating = false;
     panState.animating = false;
@@ -1102,6 +1103,13 @@ function initSidebarSwipe() {
   document.getElementById('scrollTrack').addEventListener('pointerdown', startSwipe);
   document.addEventListener('pointermove', function(evt) {
     if (!sidebarDrag.active) return;
+    if (sidebarDrag.firstMove) {
+      sidebarDrag.firstMove = false;
+      var actualMargin = parseInt(document.getElementById('sidebar').style.marginLeft) || 0;
+      sidebarDrag.startMargin = actualMargin;
+      sidebarDrag.startX = evt.clientX;
+      sidebarDrag.wasCollapsed = actualMargin < -90;
+    }
     var dx = evt.clientX - sidebarDrag.startX;
     sidebarDragHistory.push({x: evt.clientX, t: Date.now()});
     if (sidebarDragHistory.length > 10) sidebarDragHistory.shift();
