@@ -1263,7 +1263,36 @@ function initSidebarSwipe() {
 
   // Use global startSwipe()
   sidebar.addEventListener('pointerdown', startSwipe);
-  swipeZone.addEventListener('pointerdown', startSwipe);
+  swipeZone.addEventListener('pointerdown', function(evt) {
+    if (evt.button && evt.button !== 0) return;
+    evt.stopPropagation();
+
+    // If sidebar is moving, allow immediate grab
+    if (sidebarDrag.animating || sidebarDrag.active) {
+      sidebarGrabStart(evt.clientX);
+      return;
+    }
+
+    // If sidebar is collapsed, allow immediate grab
+    if (!sidebarFullyOpen) {
+      sidebarGrabStart(evt.clientX);
+      return;
+    }
+
+    // SwipeZone should ALWAYS allow immediate grab
+    sidebarGrabStart(evt.clientX);
+  });
+
+  // If sidebar is collapsed, allow immediate grab
+  if (!sidebarFullyOpen) {
+    sidebarGrabStart(evt.clientX);
+    return;
+  }
+
+  // SwipeZone should ALWAYS allow immediate grab
+  sidebarGrabStart(evt.clientX);
+});
+
   document.getElementById('collapseHandle').addEventListener('pointerdown', startSwipe);
   document.getElementById('scrollTrack').addEventListener('pointerdown', startSwipe);
 
@@ -1273,7 +1302,7 @@ function initSidebarSwipe() {
       var dx = evt.clientX - swipeStartX;
       var dy = evt.clientY - swipeStartY;
       var dist = Math.hypot(dx, dy);
-      if (dist > 30) {
+      if (dist > 20) {
         swipePending = false;
         sidebarGrabStart(evt.clientX);
       }
