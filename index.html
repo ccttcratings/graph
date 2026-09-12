@@ -1133,7 +1133,7 @@ function initSidebarSwipe() {
       var dx = evt.clientX - swipeStartX;
       var dy = evt.clientY - swipeStartY;
       var dist = Math.hypot(dx, dy);
-      if (dist > 20) {
+      if (dist > 30) {
         swipePending = false;
         sidebarGrabStart(evt.clientX);
       }
