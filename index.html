@@ -1253,7 +1253,7 @@ function buildSidebar() {
     '<span class="swipe-el">H</span><span class="swipe-el">i</span><span class="swipe-el">d</span><span class="swipe-el">e</span>&nbsp; ' +
     '<span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span>';
 }
-
+  
 // ===============================
 // Updated initSidebarSwipe()
 // ===============================
@@ -1261,8 +1261,10 @@ function initSidebarSwipe() {
   var sidebar = document.getElementById('sidebar');
   var swipeZone = document.getElementById('swipeZone');
 
-  // Use global startSwipe()
+  // Sidebar background uses threshold
   sidebar.addEventListener('pointerdown', startSwipe);
+
+  // SwipeZone should ALWAYS allow immediate grab
   swipeZone.addEventListener('pointerdown', function(evt) {
     if (evt.button && evt.button !== 0) return;
     evt.stopPropagation();
@@ -1279,25 +1281,16 @@ function initSidebarSwipe() {
       return;
     }
 
-    // SwipeZone should ALWAYS allow immediate grab
+    // SwipeZone always allows immediate grab
     sidebarGrabStart(evt.clientX);
   });
 
-  // If sidebar is collapsed, allow immediate grab
-  if (!sidebarFullyOpen) {
-    sidebarGrabStart(evt.clientX);
-    return;
-  }
-
-  // SwipeZone should ALWAYS allow immediate grab
-  sidebarGrabStart(evt.clientX);
-});
-
+  // collapseHandle + scrollTrack use threshold
   document.getElementById('collapseHandle').addEventListener('pointerdown', startSwipe);
   document.getElementById('scrollTrack').addEventListener('pointerdown', startSwipe);
 
   document.addEventListener('pointermove', function(evt) {
-    // Threshold activation
+    // Threshold activation (20px)
     if (swipePending) {
       var dx = evt.clientX - swipeStartX;
       var dy = evt.clientY - swipeStartY;
@@ -1395,26 +1388,3 @@ function initSidebarSwipe() {
     requestAnimationFrame(step);
   });
 }
-
-// ===============================
-// Resize listener
-// ===============================
-window.addEventListener('resize', function() {
-  if (state.chart) updateSwipeZone();
-});
-
-// ===============================
-// Watchdog
-// ===============================
-var watchdog = setTimeout(function() {
-  document.getElementById('loading').innerHTML =
-    '<div style="text-align:center">Loading took too long. Please refresh the page.</div>';
-}, 40000);
-
-// ===============================
-// Init
-// ===============================
-initSidebarSwipe();
-init();
-clearTimeout(watchdog);
-</script>
