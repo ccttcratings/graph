@@ -1098,6 +1098,7 @@ document.querySelectorAll('.toolbar img').forEach(function(img) {
   });
 });
 
+  
 function updateSwipeZone() {
   if (!state.chart) return;
   var yScale = state.chart.scales.y;
@@ -1149,11 +1150,11 @@ function expandSidebar() {
 }
 
 // ===============================
-// SidebarGrabStart (unchanged)
+// SidebarGrabStart
 // ===============================
 function sidebarGrabStart(x) {
   var sidebar = document.getElementById('sidebar');
-  sidebarDragHistory = [{x: x, t: Date.now()}];
+  sidebarDragHistory = [{ x: x, t: Date.now() }];
   sidebarDrag.firstMove = true;
   var curMargin = parseFloat(getComputedStyle(sidebar).marginLeft) || 0;
 
@@ -1210,9 +1211,7 @@ function buildSidebar() {
     row.appendChild(swatch);
     row.appendChild(pname);
 
-    // ===============================
-    // Updated pointerdown handler
-    // ===============================
+    // Updated pointerdown handler for rows
     row.addEventListener('pointerdown', function(evt) {
       if (evt.button && evt.button !== 0) return;
       evt.stopPropagation();
@@ -1229,7 +1228,7 @@ function buildSidebar() {
         return;
       }
 
-      // Sidebar fully open + tap on row → require 30px threshold
+      // Sidebar fully open + tap on row → require threshold
       startSwipe(evt);
     });
 
@@ -1253,7 +1252,7 @@ function buildSidebar() {
     '<span class="swipe-el">H</span><span class="swipe-el">i</span><span class="swipe-el">d</span><span class="swipe-el">e</span>&nbsp; ' +
     '<span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span><span class="swipe-el arrow">\u276E</span>';
 }
-  
+
 // ===============================
 // Updated initSidebarSwipe()
 // ===============================
@@ -1388,3 +1387,26 @@ function initSidebarSwipe() {
     requestAnimationFrame(step);
   });
 }
+
+// ===============================
+// Resize listener
+// ===============================
+window.addEventListener('resize', function() {
+  if (state.chart) updateSwipeZone();
+});
+
+// ===============================
+// Watchdog
+// ===============================
+var watchdog = setTimeout(function() {
+  document.getElementById('loading').innerHTML =
+    '<div style="text-align:center">Loading took too long. Please refresh the page.</div>';
+}, 40000);
+
+// ===============================
+// Init
+// ===============================
+initSidebarSwipe();
+init();
+clearTimeout(watchdog);
+</script>
