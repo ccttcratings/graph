@@ -153,6 +153,30 @@ function playTone(freq, endFreq, dur) {
 function pongSound() { playTone(400, 150, 0.07); }
 function buttonSound() { playTone(250, 100, 0.05); }
 function deselectSound() { playTone(600, 300, 0.04); }
+function boing25() {
+  var now = performance.now();
+  if (now - _lastPlayTime < 80) return;
+  _lastPlayTime = now;
+  if (!_audioCtx) unlockAudio();
+  if (!_audioCtx) return;
+  try {
+    if (_lastOsc) { try { _lastOsc.stop(); } catch(e) {} _lastOsc = null; }
+    var t = _audioCtx.currentTime;
+    var osc = _audioCtx.createOscillator();
+    var gain = _audioCtx.createGain();
+    osc.connect(gain); gain.connect(_audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, t);
+    var lfo = _audioCtx.createOscillator(), lg = _audioCtx.createGain();
+    lfo.connect(lg); lg.connect(osc.frequency);
+    lfo.frequency.value = 6; lg.gain.value = 200;
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    osc.start(t); osc.stop(t + 0.8);
+    lfo.start(t); lfo.stop(t + 0.8);
+    _lastOsc = osc;
+  } catch(e) {}
+}
 var DEFAULT_RADIUS = 2;
 var MIN_SPAN = 86400000 * 3;
 var view = { min: 0, max: 0, dataMin: 0, dataMax: 0 };
@@ -353,6 +377,7 @@ function startPanMomentum(initialVelocity) {
     if (atWall && !wasAtWall) {
       vx = -vx * bounceDecay;
       wasAtWall = true;
+      boing25();
     } else if (!atWall) {
       wasAtWall = false;
     }
