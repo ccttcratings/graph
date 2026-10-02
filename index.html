@@ -989,15 +989,11 @@ function fetchCSV(callback) {
 
 function init() {
   var hadChoice = loadHidden();
-  
-  // Modern standardized data pipeline
-  fetchCSV()
-    .then(function(csv) {
-      var data = parseCSV(csv);
+  fetchCSV(function(csv) {
+    var data = parseCSV(csv);
       var activeRoster = [];
       var activeSeries = {};
       var now = Date.now();
-      
       data.roster.forEach(function(name) {
         var dates = data.series[name];
         if (!dates || dates.length === 0) return;
@@ -1008,7 +1004,6 @@ function init() {
           activeSeries[name] = dates;
         }
       });
-      
       state.roster = activeRoster;
       state.series = activeSeries;
       state.saturdayDates = data.saturdayDates || [];
@@ -1030,12 +1025,7 @@ function init() {
       activeRoster.forEach(function(name) {
         activeSeries[name].forEach(function(r) { allDates.push(r[0].getTime()); });
       });
-      
-      // Safety check: Prevents Chart.js from crashing if the data feed drops empty rows
-      if (allDates.length === 0) {
-        throw new Error("No player data records found in your sheet tab.");
-      }
-      
+      if (allDates.length === 0) return;
       view.dataMin = Math.min.apply(null, allDates);
       view.dataMax = Math.max.apply(null, allDates);
       var span = view.dataMax - view.dataMin;
@@ -1061,15 +1051,11 @@ function init() {
       canvas.addEventListener('pointerup', pointerUp);
       canvas.addEventListener('pointercancel', pointerCancel);
       canvas.addEventListener('lostpointercapture', pointerCancel);
-    })
-    .catch(function(err) {
-      // Safely catches layout errors and spits them out directly to your screen text area
-      document.getElementById('loading').style.display = 'none';
-      var errDiv = document.getElementById('error') || document.getElementById('loading');
-      errDiv.style.display = 'block';
-      errDiv.innerHTML = '<div style="text-align:center;color:red;padding:20px;">' +
-                         '<h3>⚠️ Data Load Failed</h3>' + err.message + '</div>';
-    });
+  }).catch(function(err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = 'Failed to load data: ' + err.message;
+  });
 }
 
 function resetZoom() {
