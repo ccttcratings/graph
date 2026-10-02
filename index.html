@@ -1409,6 +1409,9 @@ var watchdog = setTimeout(function() {
 // Init
 // ===============================
 initSidebarSwipe();
-init();
-clearTimeout(watchdog);
+
+setTimeout(function() {
+  init();
+  clearTimeout(watchdog);
+}, 50);
 </script>
