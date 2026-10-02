@@ -622,38 +622,58 @@ function parseCSV(text) {
   var series = {};
   var playerDates = {};
   var allDates = {};
+  
   for (var i = 1; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line) continue;
-    var match = line.match(/^([^,]+),"?([^"]+)"?,(.+)$/);
-    if (!match) continue;
-    var player = match[1].trim();
-    var date = parseDate(match[2]);
-    var rating = parseFloat(match[3]);
+    
+    // Advanced split that handles quoted elements containing commas perfectly
+    var parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+    if (parts.length < 3) continue;
+    
+    // Strip out outer quotes and trailing white spaces safely
+    var player = parts[0].trim().replace(/^"|"$/g, '');
+    var dateRaw = parts[1].trim().replace(/^"|"$/g, '');
+    var ratingRaw = parts[2].trim().replace(/^"|"$/g, '');
+    
+    var date = parseDate(dateRaw);
+    var rating = parseFloat(ratingRaw);
+    
     if (!player || !date || isNaN(rating)) continue;
-    if (!series[player]) { series[player] = []; playerDates[player] = date; }
+    
+    if (!series[player]) { 
+      series[player] = []; 
+      playerDates[player] = date; 
+    }
     series[player].push([date, rating]);
+    
     if (date > playerDates[player]) playerDates[player] = date;
+    
     var key = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
     allDates[key] = date;
   }
+  
   var saturdayDates = [];
   for (var k in allDates) {
     var d = allDates[k];
     if (d.getDay() === 6) saturdayDates.push(d);
   }
   saturdayDates.sort(function(a, b) { return a.getTime() - b.getTime(); });
+  
   for (var p in series) {
     series[p].sort(function(a, b) { return a[0].getTime() - b[0].getTime(); });
   }
+  
   var lastRating = {};
   for (var p in series) {
     var pts = series[p];
     lastRating[p] = pts[pts.length - 1][1];
   }
+  
   var roster = Object.keys(series).sort(function(a, b) {
     return lastRating[b] - lastRating[a];
   });
+  
   return { roster: roster, series: series, lastDates: playerDates, saturdayDates: saturdayDates };
 }
 
@@ -975,15 +995,24 @@ function isUpdateWindow() {
 }
 
 function fetchCSV(callback) {
-  if (!isUpdateWindow()) {
-    var cached = localStorage.getItem(CSV_CACHE_KEY);
-    if (cached) { callback(cached); return; }
+  var cached = localStorage.getItem(CSV_CACHE_KEY);
+  if (!isUpdateWindow() && cached) {
+    callback(cached); 
+    return; 
   }
+  
   fetch(CSV_URL)
     .then(function(r) { return r.text(); })
     .then(function(csv) {
-      if (isUpdateWindow()) localStorage.setItem(CSV_CACHE_KEY, csv);
+      localStorage.setItem(CSV_CACHE_KEY, csv); // Keep cache updated
       callback(csv);
+    })
+    .catch(function(err) {
+      if (cached) {
+        callback(cached);
+      } else {
+        console.error("Data fetch failed completely:", err);
+      }
     });
 }
 
