@@ -999,10 +999,31 @@ function isUpdateWindow() {
 
 function fetchCSV(callback) {
   var cached = localStorage.getItem(CSV_CACHE_KEY);
-  if (!isUpdateWindow() && cached) {
+  var cacheTime = localStorage.getItem('ttGraphCacheTime');
+  var now = Date.now();
+  
+  if (cached && cacheTime && (now - cacheTime < 4 * 60 * 60 * 1000)) {
     callback(cached); 
     return; 
   }
+  
+  var cacheBusterUrl = CSV_URL + '&cb=' + now;
+  
+  fetch(cacheBusterUrl)
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      localStorage.setItem(CSV_CACHE_KEY, csv);
+      localStorage.setItem('ttGraphCacheTime', String(now)); // Update the rolling clock stamp
+      callback(csv);
+    })
+    .catch(function(err) {
+      if (cached) {
+        callback(cached);
+      } else {
+        console.error("Data fetch failed completely:", err);
+      }
+    });
+}
   
   fetch(CSV_URL)
     .then(function(r) { return r.text(); })
