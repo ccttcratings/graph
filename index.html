@@ -1006,35 +1006,25 @@ function fetchCSV(callback) {
     callback(cached); 
     return; 
   }
-  
-  var cacheBusterUrl = CSV_URL + '&cb=' + now;
-  
-  fetch(cacheBusterUrl)
-    .then(function(r) { return r.text(); })
+
+  fetch(CSV_URL, { cache: "no-store" })
+    .then(function(r) { 
+      if (!r.ok) throw new Error("Network response was not ok");
+      return r.text(); 
+    })
     .then(function(csv) {
       localStorage.setItem(CSV_CACHE_KEY, csv);
-      localStorage.setItem('ttGraphCacheTime', String(now)); // Update the rolling clock stamp
+      localStorage.setItem('ttGraphCacheTime', String(now)); // Reset the clock stamp
       callback(csv);
     })
     .catch(function(err) {
       if (cached) {
         callback(cached);
       } else {
-        console.error("Data fetch failed completely:", err);
-      }
-    });
-}
-  
-  fetch(CSV_URL)
-    .then(function(r) { return r.text(); })
-    .then(function(csv) {
-      localStorage.setItem(CSV_CACHE_KEY, csv); // Keep cache updated
-      callback(csv);
-    })
-    .catch(function(err) {
-      if (cached) {
-        callback(cached);
-      } else {
+        document.getElementById('loading').innerHTML = 
+          '<div style="text-align:center; color:#cc0000; padding:10px;">' +
+          'Data load error. Please check your internet connection or sheet permissions.<br>' +
+          '<small>' + err.message + '</small></div>';
         console.error("Data fetch failed completely:", err);
       }
     });
